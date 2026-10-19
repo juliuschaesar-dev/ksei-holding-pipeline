@@ -32,3 +32,14 @@ def test_the_dbt_arguments_come_before_the_project_and_profile_directories() -> 
 
 def test_the_root_is_the_repository_root() -> None:
     assert (Path(ROOT) / "dbt" / "dbt_project.yml").exists()
+
+
+def test_on_linux_the_container_runs_as_the_owner_of_the_mounted_directory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("tools.dbt.os.getuid", lambda: 1001, raising=False)
+
+    argv = command(["build"])
+
+    assert argv[argv.index("--user") + 1] == "1001:0"
+    assert argv.index("--user") < argv.index("airflow-worker")

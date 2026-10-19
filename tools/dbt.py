@@ -6,6 +6,7 @@ lives in one place. ./dbt is mounted, so edits apply without rebuilding the imag
     uv run python tools/dbt.py build --exclude "test_type:unit"
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,12 +16,14 @@ PROJECT_DIR = "/opt/airflow/dbt"
 
 
 def command(dbt_args: list[str]) -> list[str]:
+    user = ["--user", f"{os.getuid()}:0"] if hasattr(os, "getuid") else []
     return [
         "docker",
         "compose",
         "run",
         "--rm",
         "--no-deps",
+        *user,
         "-v",
         f"{ROOT / 'dbt'}:{PROJECT_DIR}",
         "--entrypoint",
