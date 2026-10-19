@@ -1,6 +1,7 @@
 """The provisioned dashboard: imported on startup, built on gold only, every chart returns rows.
 
-Needs the full profile (`make up PROFILE=full`) and gold data (a DAG run or `make dbt-build`).
+Needs the full profile (`make up PROFILE=full`). The chart queries need gold data (a DAG run or
+`make dbt-build`): on a fresh stack, such as CI, there are no gold tables and that test is skipped.
 """
 
 import json
@@ -8,7 +9,7 @@ import json
 import httpx
 import pytest
 
-from tests.smoke.conftest import SUPERSET_URL, compose_ps
+from tests.smoke.conftest import CLICKHOUSE_URL, SUPERSET_URL, compose_ps
 
 pytestmark = pytest.mark.smoke
 
@@ -188,7 +189,16 @@ def chart_query(params: dict) -> dict:
     }
 
 
-def test_every_chart_query_returns_rows(api: httpx.Client) -> None:
+def test_every_chart_query_returns_rows(api: httpx.Client, env: dict[str, str]) -> None:
+    tables = httpx.post(
+        CLICKHOUSE_URL,
+        auth=(env["CLICKHOUSE_PIPELINE_USER"], env["CLICKHOUSE_PIPELINE_PASSWORD"]),
+        content="SELECT count() FROM system.tables WHERE database = 'gold'",
+        timeout=30,
+    ).text.strip()
+    if tables == "0":
+        pytest.skip("no gold tables yet: run the DAG or `make dbt-build` first")
+
     charts = api.get(f"/api/v1/dashboard/{SLUG}/charts").json()["result"]
 
     for chart in charts:
