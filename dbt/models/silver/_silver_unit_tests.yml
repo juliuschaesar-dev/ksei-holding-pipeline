@@ -1,0 +1,200 @@
+version: 2
+
+unit_tests:
+  - name: hub_security_collects_codes_from_both_sources_once_each
+    model: hub_security
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,I1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-08-31,2026-08-31,AAAA,AAAA TBK,EQUITY,I1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,ONLYM,ONLYM TBK,EQUITY,I2,ONLYM PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+      - input: source('bronze', 'stg_holding_composition')
+        format: csv
+        rows: |
+          _period,date,code,type,sec_num,price,local_is,local_cp,local_pf,local_ib,local_id,local_mf,local_sc,local_fd,local_ot,local_total,foreign_is,foreign_cp,foreign_pf,foreign_ib,foreign_id,foreign_mf,foreign_sc,foreign_fd,foreign_ot,foreign_total,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,EQUITY,1000,10.5,7,0,0,0,0,0,0,0,0,7,0,3,0,0,0,0,0,0,0,3,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,ONLYH,EQUITY,1000,10.5,7,0,0,0,0,0,0,0,0,7,0,3,0,0,0,0,0,0,0,3,f.zip,2026-10-07 12:00:00
+    expect:
+      format: csv
+      rows: |
+        hmd5_security,code,record_source
+        098890dde069e9abad63f19a0d9e1f32,AAAA,bronze.stg_holding_composition
+        8200c50464bad268033a67f7397ac2f0,ONLYH,bronze.stg_holding_composition
+        e683514b5fe130f3aa64acc07b7b12c2,ONLYM,bronze.stg_master_securities
+
+  - name: hub_isin_collects_each_isin_once_from_the_master_file
+    model: hub_isin
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-08-31,2026-08-31,AAAA,AAAA TBK,EQUITY,ISIN_1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,BBBB,BBBB TBK,EQUITY,ISIN_2,BBBB PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+    expect:
+      format: csv
+      rows: |
+        hmd5_isin,isin_code,record_source
+        f4f68995694d939b3ae2643661752245,ISIN_1,bronze.stg_master_securities
+        85c8f8cfdc25f3f0f96fe8921f7635b7,ISIN_2,bronze.stg_master_securities
+
+  - name: hub_currency_collects_each_currency_once_from_the_master_file
+    model: hub_currency
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,BBBB,BBBB TBK,EQUITY,ISIN_2,BBBB PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,CCCC,CCCC TBK,EQUITY,ISIN_3,CCCC PT,ACTIVE,,1970-01-01,USD,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+    expect:
+      format: csv
+      rows: |
+        hmd5_currency,currency,record_source
+        662f521b12c240d2c3c195f3df817b0c,IDR,bronze.stg_master_securities
+        3518f8944d42212dd37daffe097d216e,USD,bronze.stg_master_securities
+
+  - name: link_ties_a_code_an_isin_and_a_currency_once
+    model: link_master_securities
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-08-31,2026-08-31,AAAA,AAAA TBK,EQUITY,ISIN_1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_2,AAAA PT,ACTIVE,,1970-01-01,USD,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+    expect:
+      format: csv
+      rows: |
+        lmd5_master_securities,hmd5_security,hmd5_isin,hmd5_currency
+        8d53c04a5b7fff6f8e6584a5a0679d77,098890dde069e9abad63f19a0d9e1f32,f4f68995694d939b3ae2643661752245,662f521b12c240d2c3c195f3df817b0c
+        c9ae68a07de359941535bb75362dc36c,098890dde069e9abad63f19a0d9e1f32,85c8f8cfdc25f3f0f96fe8921f7635b7,3518f8944d42212dd37daffe097d216e
+
+  - name: holding_satellite_is_keyed_by_security_and_period
+    model: satellite_holding_composition
+    given:
+      - input: source('bronze', 'stg_holding_composition')
+        format: csv
+        rows: |
+          _period,date,code,type,sec_num,price,local_is,local_cp,local_pf,local_ib,local_id,local_mf,local_sc,local_fd,local_ot,local_total,foreign_is,foreign_cp,foreign_pf,foreign_ib,foreign_id,foreign_mf,foreign_sc,foreign_fd,foreign_ot,foreign_total,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,EQUITY,1000,10.5,7,0,0,0,0,0,0,0,0,7,0,3,0,0,0,0,0,0,0,3,f.zip,2026-10-07 12:00:00
+          2026-08-31,2026-08-31,AAAA,EQUITY,1000,10.5,7,0,0,0,0,0,0,0,0,7,0,3,0,0,0,0,0,0,0,3,f.zip,2026-10-07 12:00:00
+    expect:
+      format: csv
+      rows: |
+        hmd5_security,period,md5_diff,price,local_is,record_source,meta_is_active,is_deleted
+        098890dde069e9abad63f19a0d9e1f32,2026-08-31,6396e1c9e67e8a2f403347dabfccd7ad,10.5,7,bronze.stg_holding_composition,1,0
+        098890dde069e9abad63f19a0d9e1f32,2026-09-30,0477ad12bc8b58abc2d21ead70e9d2a3,10.5,7,bronze.stg_holding_composition,1,0
+
+  - name: master_satellite_is_keyed_by_the_link_and_period_and_drops_exact_duplicates
+    model: satellite_master_securities
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_A1,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_A2,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,AAAA,AAAA TBK,EQUITY,ISIN_A2,AAAA PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+    expect:
+      format: csv
+      rows: |
+        lmd5_master_securities,period,md5_diff
+        c5883e756edf68a53cdca7309fbd010f,2026-09-30,a1c1e3f6e601f4cbc8e1abe36f07c26c
+        9cb7cf243171357c0face7c082d4453d,2026-09-30,a72283531b3ddd0d3bf7e6df8d3bf421
+
+  - name: satellite_loads_a_changed_payload_as_a_new_row
+    model: satellite_master_securities
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,CCCC,CCCC TBK,EQUITY,ISIN_C,CCCC PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,NEW,0,f.zip,2026-10-07 12:00:00
+      - input: this
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp
+          a233ccc3417999d6b352c37486750a2e,2026-09-30,44c3679b96c8e6cc5944b9ef1c9b586a,2026-10-01 00:00:00.000
+    expect:
+      format: csv
+      rows: |
+        lmd5_master_securities,period,md5_diff,sector
+        a233ccc3417999d6b352c37486750a2e,2026-09-30,43aa06679511250c20666af823589b17,NEW
+
+  - name: satellite_skips_a_payload_that_is_already_the_current_version
+    model: satellite_master_securities
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,CCCC,CCCC TBK,EQUITY,ISIN_C,CCCC PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,NEW,0,f.zip,2026-10-07 12:00:00
+          2026-09-30,2026-09-30,DDDD,DDDD TBK,EQUITY,ISIN_D,DDDD PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,,0,f.zip,2026-10-07 12:00:00
+      - input: this
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp
+          a233ccc3417999d6b352c37486750a2e,2026-09-30,43aa06679511250c20666af823589b17,2026-10-02 00:00:00.000
+    expect:
+      format: csv
+      rows: |
+        lmd5_master_securities,period,md5_diff
+        fb00f771ce211596d957783e7ea1f7db,2026-09-30,f74645ab3711eddf0fc877fa1b09f405
+
+  - name: satellite_reloads_a_payload_that_returns_to_an_earlier_value
+    model: satellite_master_securities
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-09-30,2026-09-30,CCCC,CCCC TBK,EQUITY,ISIN_C,CCCC PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,OLD,0,f.zip,2026-10-07 12:00:00
+      - input: this
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp
+          a233ccc3417999d6b352c37486750a2e,2026-09-30,44c3679b96c8e6cc5944b9ef1c9b586a,2026-10-01 00:00:00.000
+          a233ccc3417999d6b352c37486750a2e,2026-09-30,43aa06679511250c20666af823589b17,2026-10-02 00:00:00.000
+    expect:
+      format: csv
+      rows: |
+        lmd5_master_securities,period,md5_diff,sector
+        a233ccc3417999d6b352c37486750a2e,2026-09-30,44c3679b96c8e6cc5944b9ef1c9b586a,OLD
+
+  - name: satellite_treats_the_same_payload_in_another_period_as_a_separate_row
+    model: satellite_master_securities
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: source('bronze', 'stg_master_securities')
+        format: csv
+        rows: |
+          _period,date,code,description,type,isin_code,issuer,status,stock_exchange,listing_date,currency,form,eff_date_isin,maturity_date,expire_date,exercise_price,interest,interest_type,interest_freq,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,sector,closing_price,_source_file,_ingested_at
+          2026-08-31,2026-08-31,CCCC,CCCC TBK,EQUITY,ISIN_C,CCCC PT,ACTIVE,,1970-01-01,IDR,Electronic,1970-01-01,1970-01-01,1970-01-01,0,0,,,0,0,0,0,0,0,0,0,OLD,0,f.zip,2026-10-07 12:00:00
+      - input: this
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp
+          a233ccc3417999d6b352c37486750a2e,2026-09-30,44c3679b96c8e6cc5944b9ef1c9b586a,2026-10-01 00:00:00.000
+    expect:
+      format: csv
+      rows: |
+        lmd5_master_securities,period,md5_diff
+        a233ccc3417999d6b352c37486750a2e,2026-08-31,0f5ee239e74963010b5429da5e481055

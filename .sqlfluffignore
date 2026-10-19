@@ -1,0 +1,4 @@
+dbt/target/
+dbt/dbt_packages/
+# macro files are Jinja templates; the SQL they render is linted through the models that call them
+dbt/macros/

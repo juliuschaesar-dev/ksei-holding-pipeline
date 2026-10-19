@@ -1,0 +1,185 @@
+version: 2
+
+# Silver is the raw Data Vault 2.0: hubs hold business keys, the link holds the relationship,
+# satellites hold the descriptive history. Nothing is cleaned or reinterpreted here; that is
+# gold's job. Everything is insert-only (a changed attribute is a new satellite row). The
+# reporting period is not a business entity, so it is a column of the satellites (a child key),
+# not a hub.
+
+_vault_columns:
+  load_timestamp: &load_timestamp
+    description: When the row was loaded into the vault.
+    data_tests: [not_null]
+  record_source: &record_source
+    description: The bronze table the row came from.
+    data_tests: [not_null]
+  md5_diff: &md5_diff
+    description: >
+      MD5 over the parent keys, child keys and payload; detects a change. It can repeat within a
+      grain (a value that goes A -> B -> A is recorded three times), so it is unique only together
+      with load_timestamp.
+    data_tests: [not_null]
+  meta_is_active: &meta_is_active
+    description: >
+      1 for the version in force, 0 once a newer version supersedes it. Kept true by the
+      dv_deactivate_superseded() post-hook.
+    data_tests:
+      - not_null
+      - accepted_values:
+          arguments:
+            values: [0, 1]
+  is_deleted: &is_deleted
+    description: >
+      1 on the row inserted when the grain disappeared from its source, 0 otherwise. Kept true by
+      the dv_track_deletions() post-hook.
+    data_tests:
+      - not_null
+      - accepted_values:
+          arguments:
+            values: [0, 1]
+  period: &period
+    description: Release date of the monthly file (the last trading day of the month).
+    data_tests: [not_null]
+
+models:
+  - name: hub_security
+    description: >
+      Distinct securities. One row per KSEI security code, from the master file and the holding
+      composition together (the two files do not cover the same codes).
+    columns:
+      - name: hmd5_security
+        description: MD5 of the security code; the surrogate key used by the link and satellites.
+        data_tests: [unique, not_null]
+      - name: code
+        description: KSEI security code (business key).
+        data_tests: [unique, not_null]
+      - name: load_timestamp
+        <<: *load_timestamp
+      - name: record_source
+        <<: *record_source
+
+  - name: hub_isin
+    description: >
+      Distinct ISINs, the identity of an instrument. One row per ISIN, from the master file
+      (the holding composition has no ISIN).
+    columns:
+      - name: hmd5_isin
+        description: MD5 of the ISIN; the surrogate key used by the link.
+        data_tests: [unique, not_null]
+      - name: isin_code
+        description: ISIN (business key).
+        data_tests: [unique, not_null]
+      - name: load_timestamp
+        <<: *load_timestamp
+      - name: record_source
+        <<: *record_source
+
+  - name: hub_currency
+    description: >
+      Distinct currencies. One row per currency code (IDR, USD), from the master file.
+    columns:
+      - name: hmd5_currency
+        description: MD5 of the currency code; the surrogate key used by the link.
+        data_tests: [unique, not_null]
+      - name: currency
+        description: Currency code (business key).
+        data_tests: [unique, not_null]
+      - name: load_timestamp
+        <<: *load_timestamp
+      - name: record_source
+        <<: *record_source
+
+  - name: link_master_securities
+    description: >
+      A security code, the ISIN it stands for and the currency it is denominated in. One row per
+      distinct combination ever seen in the master file; KSEI occasionally reuses one code for two
+      ISINs, so a code can have several rows.
+    columns:
+      - name: lmd5_master_securities
+        description: MD5 over the security code, the ISIN and the currency, in that order.
+        data_tests: [unique, not_null]
+      - name: hmd5_security
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_security')
+                field: hmd5_security
+      - name: hmd5_isin
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_isin')
+                field: hmd5_isin
+      - name: hmd5_currency
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_currency')
+                field: hmd5_currency
+      - name: load_timestamp
+        <<: *load_timestamp
+      - name: record_source
+        <<: *record_source
+
+  - name: satellite_master_securities
+    description: >
+      Master file attributes of a security, ISIN and currency in a period, as typed in bronze, including
+      the description, type and issuer of the security. Hangs
+      off the code-ISIN-currency link; the period is a child key, so there is one version history per period.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [lmd5_master_securities, period, load_timestamp, md5_diff]
+    columns:
+      - name: lmd5_master_securities
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('link_master_securities')
+                field: lmd5_master_securities
+      - name: period
+        <<: *period
+      - name: md5_diff
+        <<: *md5_diff
+      - name: meta_is_active
+        <<: *meta_is_active
+      - name: is_deleted
+        <<: *is_deleted
+      - name: load_timestamp
+        <<: *load_timestamp
+      - name: record_source
+        <<: *record_source
+
+  - name: satellite_holding_composition
+    description: >
+      Holding composition of a security in a period, as typed in bronze: price, shares
+      outstanding, and the local and foreign quantities by investor type. Hangs off the security
+      hub (the file has no ISIN); the period is a child key.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [hmd5_security, period, load_timestamp, md5_diff]
+    columns:
+      - name: hmd5_security
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_security')
+                field: hmd5_security
+      - name: period
+        <<: *period
+      - name: md5_diff
+        <<: *md5_diff
+      - name: meta_is_active
+        <<: *meta_is_active
+      - name: is_deleted
+        <<: *is_deleted
+      - name: load_timestamp
+        <<: *load_timestamp
+      - name: record_source
+        <<: *record_source

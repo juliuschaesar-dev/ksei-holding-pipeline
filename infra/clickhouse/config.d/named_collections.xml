@@ -1,0 +1,10 @@
+<clickhouse>
+  <!-- Credentials come from the container environment; nothing secret lives in the repo. -->
+  <named_collections>
+    <ksei_s3>
+      <url from_env="CLICKHOUSE_S3_URL"/>
+      <access_key_id from_env="S3_ACCESS_KEY"/>
+      <secret_access_key from_env="S3_SECRET_KEY"/>
+    </ksei_s3>
+  </named_collections>
+</clickhouse>

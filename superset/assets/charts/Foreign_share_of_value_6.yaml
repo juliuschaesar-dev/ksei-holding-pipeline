@@ -1,0 +1,34 @@
+slice_name: Foreign share of value
+description: null
+certified_by: null
+certification_details: null
+viz_type: big_number_total
+params:
+  datasource: 1__table
+  viz_type: big_number_total
+  extra_form_data: {}
+  dashboards: []
+  adhoc_filters:
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: is_latest_period = 1
+    subject: null
+    operator: null
+    comparator: null
+  annotation_layers: []
+  metric:
+    expressionType: SQL
+    sqlExpression: sum(foreign_value) / sum(total_value)
+    label: foreign_share
+    hasCustomLabel: true
+  y_axis_format: .1%
+  subheader: of the total value held
+  header_font_size: 0.45
+  subheader_font_size: 0.15
+  time_format: smart_date
+  force_timestamp_formatting: false
+query_context: null
+cache_timeout: null
+uuid: c48e1e8c-274c-4348-95cc-1bcb26fdd973
+version: 1.0.0
+dataset_uuid: 1f3f0a30-5b08-4b94-8eb8-232026d6717a

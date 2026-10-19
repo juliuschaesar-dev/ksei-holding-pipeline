@@ -1,0 +1,49 @@
+slice_name: Q2 Ownership by investor type
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_bar
+params:
+  datasource: 2__table
+  viz_type: echarts_timeseries_bar
+  extra_form_data: {}
+  dashboards: []
+  adhoc_filters:
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: is_latest_period = 1
+    subject: null
+    operator: null
+    comparator: null
+  annotation_layers: []
+  x_axis: investor_type_name
+  metrics:
+  - expressionType: SQL
+    sqlExpression: sumIf(holding_value, residency = 'local') / 1e12
+    label: local
+    hasCustomLabel: true
+  - expressionType: SQL
+    sqlExpression: sumIf(holding_value, residency = 'foreign') / 1e12
+    label: foreign
+    hasCustomLabel: true
+  groupby: []
+  timeseries_limit_metric:
+    expressionType: SQL
+    sqlExpression: sum(holding_value) / 1e12
+    label: total_value
+    hasCustomLabel: true
+  row_limit: 50
+  orientation: horizontal
+  stack: Stack
+  y_axis_format: $,.0f
+  x_axis_sort: total_value
+  x_axis_sort_asc: true
+  show_legend: true
+  legendOrientation: top
+  truncateYAxis: false
+  color_scheme: supersetColors
+query_context: null
+cache_timeout: null
+uuid: 793c4513-8e36-433a-8ccc-001608689603
+version: 1.0.0
+dataset_uuid: 0f7c5a13-27bc-4cf0-87ea-86146502663a

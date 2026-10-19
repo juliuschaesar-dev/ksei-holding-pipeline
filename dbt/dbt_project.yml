@@ -1,0 +1,46 @@
+name: ksei
+version: "0.1.0"
+config-version: 2
+profile: ksei
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # --- Data Vault 2.0 conventions ----------------------------------------------------
+  # Delimiter between business key parts before hashing, so ('AB', 'C') and ('A', 'BC') differ.
+  dv_hash_delimiter: "||"
+  # Substituted for an empty business key part so it never collides with a real value.
+  dv_null_placeholder: "^^"
+  dv_timezone: "Asia/Jakarta"
+  # Investor-type codes of the holding composition file, and the name each one is shown with (the names
+  # come from the dashboard design; KSEI's own document for the codes has not been read). The one home of
+  # both: the unpivot of the holding fact loops over the codes, investor_type_name() reads the names.
+  investor_types:
+    is: Insurance
+    cp: Corporate
+    pf: Pension fund
+    ib: Financial institution
+    id: Individual
+    mf: Mutual fund
+    sc: Securities company
+    fd: Foundation
+    ot: Others
+
+models:
+  ksei:
+    silver:
+      # Raw Data Vault 2.0: insert-only. A changed attribute is a new satellite row.
+      +schema: silver
+      +materialized: incremental
+      +incremental_strategy: append
+      +on_schema_change: append_new_columns
+      +engine: MergeTree()
+    gold:
+      # Facts and marts projected from the vault, rebuilt as tables on every run.
+      +schema: gold
+      +materialized: table
+      +engine: MergeTree()

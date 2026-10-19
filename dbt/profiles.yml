@@ -1,0 +1,13 @@
+ksei:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      driver: http
+      host: "{{ env_var('CLICKHOUSE_HOST') }}"
+      port: "{{ env_var('CLICKHOUSE_HTTP_PORT') | as_number }}"
+      user: "{{ env_var('CLICKHOUSE_PIPELINE_USER') }}"
+      password: "{{ env_var('CLICKHOUSE_PIPELINE_PASSWORD') }}"
+      schema: silver
+      secure: false
+      threads: 4

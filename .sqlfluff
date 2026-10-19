@@ -1,0 +1,23 @@
+[sqlfluff]
+dialect = clickhouse
+templater = jinja
+# LT05 line length; CP03 function names are case-sensitive in ClickHouse (toDate, accurateCast)
+exclude_rules = LT05, CP03
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower
+
+[sqlfluff:templater:jinja]
+# dbt functions (ref, source, config, var, is_incremental) are stubbed by sqlfluff; the project
+# macros are loaded so `{{ clean_text(...) }}` and friends render.
+apply_dbt_builtins = True
+load_macros_from_path = dbt/macros
+
+[sqlfluff:templater:jinja:context]
+target = {"name": "dev"}

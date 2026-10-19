@@ -1,0 +1,29 @@
+# secrets and local config
+.env
+# data (never commit)
+data/
+*.zip
+*.parquet
+*.csv
+!tests/fixtures/**
+!dbt/seeds/**
+# python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+# airflow
+airflow/logs/
+# editors / os
+.idea/
+.DS_Store
+# CI scratch files
+.trivy/
+compose.log

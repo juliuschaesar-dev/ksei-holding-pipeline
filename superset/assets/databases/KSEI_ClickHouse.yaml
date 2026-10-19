@@ -1,0 +1,18 @@
+database_name: KSEI ClickHouse
+sqlalchemy_uri: clickhousedb://user:XXXXXXXXXX@host/gold
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: false
+allow_cvas: false
+allow_dml: false
+allow_file_upload: false
+extra:
+  metadata_params: {}
+  engine_params: {}
+  metadata_cache_timeout: {}
+  schemas_allowed_for_file_upload: []
+impersonate_user: false
+configuration_method: sqlalchemy_form
+uuid: 1980a94e-8c20-453b-b09b-0ae7bc9f2f06
+version: 1.0.0

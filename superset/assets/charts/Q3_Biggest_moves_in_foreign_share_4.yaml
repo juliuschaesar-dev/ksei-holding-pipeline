@@ -1,0 +1,57 @@
+slice_name: Q3 Biggest moves in foreign share
+description: null
+certified_by: null
+certification_details: null
+viz_type: table
+params:
+  datasource: 1__table
+  viz_type: table
+  extra_form_data: {}
+  dashboards: []
+  adhoc_filters:
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: is_latest_period = 1
+    subject: null
+    operator: null
+    comparator: null
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: abs(foreign_share_change_pp) >= 0.15
+    subject: null
+    operator: null
+    comparator: null
+  annotation_layers: []
+  query_mode: aggregate
+  groupby:
+  - security_type
+  metrics:
+  - expressionType: SQL
+    sqlExpression: max(foreign_share_change_pp)
+    label: share_change_pp
+    hasCustomLabel: true
+  all_columns: []
+  percent_metrics: []
+  timeseries_limit_metric:
+    expressionType: SQL
+    sqlExpression: max(foreign_share_change_pp)
+    label: share_change_pp
+    hasCustomLabel: true
+  order_desc: true
+  row_limit: 50
+  include_search: false
+  show_cell_bars: true
+  align_pn: true
+  color_pn: true
+  table_timestamp_format: smart_date
+  column_config:
+    share_change_pp:
+      d3NumberFormat: +.2f
+      showCellBars: true
+      alignPositiveNegative: true
+      colorPositiveNegative: true
+query_context: null
+cache_timeout: null
+uuid: d521cc50-927e-42ef-b8e3-36a6ad268842
+version: 1.0.0
+dataset_uuid: 1f3f0a30-5b08-4b94-8eb8-232026d6717a

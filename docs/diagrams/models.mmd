@@ -1,0 +1,15 @@
+flowchart LR
+    S1["bronze.stg_master_securities"] --> HS["hub_security"]
+    S1 --> HI["hub_isin"]
+    S1 --> HC["hub_currency"]
+    S1 --> LK["link_master_securities"]
+    S1 --> SM["satellite_master_securities"]
+    S2["bronze.stg_holding_composition"] --> HS
+    S2 --> SH["satellite_holding_composition"]
+
+    S3["bronze.stg_period"] --> DP["dim_period"]
+
+    HS & HI & HC & LK & SM --> FS["fact_security_monthly"]
+    HS & SH --> FH["fact_holding_monthly"]
+    FH --> MF["mart_foreign_ownership_monthly"]
+    FS --> MF

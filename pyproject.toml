@@ -1,0 +1,61 @@
+[project]
+name = "ksei-holding-pipeline"
+version = "0.1.0"
+description = "Monthly KSEI holding composition pipeline (portfolio project)."
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "boto3==1.43.75",
+    "httpx==0.28.1",
+    "polars==1.44.2",
+]
+
+[dependency-groups]
+dev = [
+    "moto[s3]==5.2.3",
+    "pre-commit==4.6.2",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "respx==0.23.1",
+    "ruff==0.16.10",
+    "sqlfluff==4.4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ksei"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+markers = [
+    "unit: fast, offline unit tests",
+    "integration: needs `make up` and the fixture HTTP server",
+    "smoke: needs `make up`; service health checks",
+]
+addopts = "-ra --strict-markers"
+
+[tool.coverage.run]
+source = ["src/ksei"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "T20", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S608"]
+# table names come from the DATASETS registry (constants), never from input
+"src/ksei/warehouse.py" = ["S608"]
+# generated fixture rows are long by nature
+"tools/generate_dbt_unit_tests.py" = ["E501"]

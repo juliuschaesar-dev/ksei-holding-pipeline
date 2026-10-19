@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 540" width="1420" height="540" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#24292f"/></marker></defs>
+<rect x="0" y="0" width="1420" height="540" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="1.5"/>
+<text x="710.0" y="28" font-size="20" font-weight="700" text-anchor="middle" fill="#1f2328">KSEI Holding Composition Pipeline: architecture</text>
+<rect x="20" y="45" width="1030" height="125" rx="14" fill="#ddf4ff" stroke="#54aeff" stroke-width="1.5"/>
+<text x="36" y="71" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">Airflow 3 (CeleryExecutor): orchestration</text>
+<rect x="40" y="85" width="230" height="65" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="155.0" y="113.5" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">apiserver, scheduler</text>
+<text x="155.0" y="131.5" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">dag-processor, triggerer</text>
+<rect x="305" y="85" width="210" height="65" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="410.0" y="113.5" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">DAG ksei_monthly</text>
+<text x="410.0" y="131.5" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">0 6 2 * *, Asia/Jakarta</text>
+<rect x="550" y="85" width="250" height="65" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="675.0" y="113.5" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">Celery worker tasks</text>
+<text x="675.0" y="131.5" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">detect, download, parse, load_bronze</text>
+<rect x="835" y="85" width="195" height="65" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="932.5" y="113.5" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">dbt_build task</text>
+<text x="932.5" y="131.5" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">dbt virtualenv</text>
+<path d="M270,117 H303" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<path d="M515,117 H548" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<path d="M800,117 H833" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<rect x="1090" y="45" width="310" height="125" rx="14" fill="#fbefff" stroke="#c297ff" stroke-width="1.5"/>
+<text x="1106" y="71" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">Metadata</text>
+<rect x="1105" y="85" width="135" height="65" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="1172.5" y="113.5" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">Redis</text>
+<text x="1172.5" y="131.5" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">Celery broker</text>
+<rect x="1255" y="85" width="130" height="65" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="1320.0" y="113.5" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">PostgreSQL</text>
+<text x="1320.0" y="131.5" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">Airflow, Superset</text>
+<path d="M1050,117 H1088" fill="none" stroke="#24292f" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a)"/>
+<rect x="20" y="235" width="200" height="150" rx="14" fill="#ffebe9" stroke="#ff8182" stroke-width="1.5"/>
+<text x="36" y="261" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">Source (public)</text>
+<rect x="40" y="280" width="160" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="120.0" y="307.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">KSEI archive</text>
+<text x="120.0" y="325.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">master_securities</text>
+<text x="120.0" y="343.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">holding_composition</text>
+<rect x="250" y="235" width="400" height="150" rx="14" fill="#dafbe1" stroke="#4ac26b" stroke-width="1.5"/>
+<text x="266" y="261" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">SeaweedFS S3 (bucket ksei-lake)</text>
+<rect x="270" y="280" width="160" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="350.0" y="316.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">bronze/raw</text>
+<text x="350.0" y="334.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">zip, write-once</text>
+<rect x="470" y="280" width="160" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="550.0" y="316.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">bronze/parsed</text>
+<text x="550.0" y="334.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">Parquet, all strings</text>
+<rect x="680" y="235" width="580" height="150" rx="14" fill="#fff8c5" stroke="#d4a72c" stroke-width="1.5"/>
+<text x="696" y="261" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">ClickHouse</text>
+<rect x="700" y="280" width="160" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="780.0" y="316.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">bronze.stg_*</text>
+<text x="780.0" y="334.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">typed tables</text>
+<rect x="890" y="280" width="160" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="970.0" y="316.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">silver</text>
+<text x="970.0" y="334.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">Data Vault 2.0</text>
+<rect x="1080" y="280" width="160" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="1160.0" y="316.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">gold</text>
+<text x="1160.0" y="334.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">dim, fact, mart</text>
+<rect x="1290" y="235" width="110" height="150" rx="14" fill="#ffffff" stroke="#8c959f" stroke-width="1.5"/>
+<text x="1306" y="261" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">BI</text>
+<rect x="1300" y="280" width="90" height="80" rx="10" fill="#ffffff" stroke="#57606a" stroke-width="1.5"/>
+<text x="1345.0" y="316.0" font-size="14" font-weight="600" text-anchor="middle" fill="#1f2328">Superset</text>
+<text x="1345.0" y="334.0" font-size="12" font-weight="400" text-anchor="middle" fill="#57606a">dashboard</text>
+<path d="M200,320 H268" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<circle cx="234" cy="305" r="12" fill="#0969da"/>
+<text x="234" y="310" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">1</text>
+<path d="M430,320 H468" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<circle cx="449" cy="305" r="12" fill="#0969da"/>
+<text x="449" y="310" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">2</text>
+<path d="M630,320 H698" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<circle cx="664" cy="305" r="12" fill="#0969da"/>
+<text x="664" y="310" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">3</text>
+<path d="M860,320 H888" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<circle cx="874" cy="305" r="12" fill="#0969da"/>
+<text x="874" y="310" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">4</text>
+<path d="M1050,320 H1078" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<circle cx="1064" cy="305" r="12" fill="#0969da"/>
+<text x="1064" y="310" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">5</text>
+<path d="M1240,320 H1298" fill="none" stroke="#24292f" stroke-width="2" marker-end="url(#a)"/>
+<circle cx="1269" cy="305" r="12" fill="#0969da"/>
+<text x="1269" y="310" font-size="13" font-weight="700" text-anchor="middle" fill="#ffffff">6</text>
+<path d="M675,170 V205 H450 V233" fill="none" stroke="#0969da" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a)"/>
+<path d="M675,170 V205 H780 V233" fill="none" stroke="#0969da" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a)"/>
+<path d="M932,170 V233" fill="none" stroke="#0969da" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#a)"/>
+<text x="560" y="200" font-size="12" font-weight="400" text-anchor="end" fill="#0969da">download, parse, load</text>
+<text x="945" y="205" font-size="12" font-weight="400" text-anchor="start" fill="#0969da">dbt build</text>
+<text x="20" y="425" font-size="15" font-weight="700" text-anchor="start" fill="#1f2328">Data flow</text>
+<circle cx="30" cy="446" r="8" fill="#0969da"/>
+<text x="30" y="450" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">1</text>
+<text x="48" y="450" font-size="12.5" font-weight="400" text-anchor="start" fill="#1f2328">Download the zip from the archive page links through src/ksei/client.py (pool ksei_http, 1 slot) into bronze/raw; the file is never overwritten.</text>
+<circle cx="30" cy="462" r="8" fill="#0969da"/>
+<text x="30" y="466" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">2</text>
+<text x="48" y="466" font-size="12.5" font-weight="400" text-anchor="start" fill="#1f2328">Parse into Parquet (polars): every column a string, plus _period, _source_file, _ingested_at.</text>
+<circle cx="30" cy="478" r="8" fill="#0969da"/>
+<text x="30" y="482" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">3</text>
+<text x="48" y="482" font-size="12.5" font-weight="400" text-anchor="start" fill="#1f2328">load_bronze: drop the period partition, then INSERT ... SELECT from s3() with each column cast to its registry type.</text>
+<circle cx="30" cy="494" r="8" fill="#0969da"/>
+<text x="30" y="498" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">4</text>
+<text x="48" y="498" font-size="12.5" font-weight="400" text-anchor="start" fill="#1f2328">dbt silver: hubs, link and satellites, insert-only, keyed by MD5 hashes (flags meta_is_active and is_deleted).</text>
+<circle cx="30" cy="510" r="8" fill="#0969da"/>
+<text x="30" y="514" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">5</text>
+<text x="48" y="514" font-size="12.5" font-weight="400" text-anchor="start" fill="#1f2328">dbt gold: facts and marts rebuilt every run (dim_period, fact_security_monthly, fact_holding_monthly, mart_foreign_ownership_monthly).</text>
+<circle cx="30" cy="526" r="8" fill="#0969da"/>
+<text x="30" y="530" font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">6</text>
+<text x="48" y="530" font-size="12.5" font-weight="400" text-anchor="start" fill="#1f2328">Superset reads only gold tables over clickhousedb://.</text>
+</svg>

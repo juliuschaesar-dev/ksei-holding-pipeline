@@ -1,0 +1,28 @@
+slice_name: Latest period
+description: null
+certified_by: null
+certification_details: null
+viz_type: big_number_total
+params:
+  datasource: 1__table
+  viz_type: big_number_total
+  extra_form_data: {}
+  dashboards: []
+  adhoc_filters: []
+  annotation_layers: []
+  metric:
+    expressionType: SQL
+    sqlExpression: max(period)
+    label: latest_period
+    hasCustomLabel: true
+  y_axis_format: SMART_NUMBER
+  subheader: latest monthly release loaded
+  header_font_size: 0.45
+  subheader_font_size: 0.15
+  time_format: '%d %b %Y'
+  force_timestamp_formatting: true
+query_context: null
+cache_timeout: null
+uuid: c421b226-169c-4151-b2c5-97ad5c229e47
+version: 1.0.0
+dataset_uuid: 1f3f0a30-5b08-4b94-8eb8-232026d6717a

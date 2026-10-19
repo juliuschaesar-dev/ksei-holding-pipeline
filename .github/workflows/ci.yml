@@ -1,0 +1,128 @@
+name: CI
+
+# Every command is a Makefile target, so a run here is the run you do locally (see AGENTS.md).
+# The pinned versions of the actions and of the scanners are in docs/versions.md.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_LOCKED: "1" # fail instead of silently updating uv.lock
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - run: make lint
+
+  # Unit tests with the coverage gate; they also fail when the generated dbt fixtures are stale.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - run: make test
+
+  # The DAG tests need Airflow, so they run inside the Airflow image.
+  test-dags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/bake-action@v7.5.0
+        with:
+          source: .
+          files: docker-compose.yml
+          targets: airflow-init
+          set: |
+            *.cache-from=type=gha,scope=ksei
+            *.cache-to=type=gha,scope=ksei,mode=max
+      - run: make env
+      - run: make test-dags
+
+  # Build every image of the stack (Superset too), then scan them for fixable HIGH/CRITICAL findings.
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/bake-action@v7.5.0
+        with:
+          source: .
+          files: docker-compose.yml
+          targets: airflow-init,superset
+          set: |
+            *.cache-from=type=gha,scope=ksei
+            *.cache-to=type=gha,scope=ksei,mode=max
+      - run: make env
+      - run: make images PROFILE=full
+      - run: make scan-images
+
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0 # the whole history, not only the last commit
+      - run: make scan-secrets
+
+  # The stack up, then the smoke tests, the integration tests (which build the dbt models on synthetic
+  # periods and check that a rerun and a full rebuild are identical) and the dbt unit tests.
+  integration:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/bake-action@v7.5.0
+        with:
+          source: .
+          files: docker-compose.yml
+          targets: airflow-init,superset
+          set: |
+            *.cache-from=type=gha,scope=ksei
+            *.cache-to=type=gha,scope=ksei,mode=max
+      - run: make env
+      - run: make up PROFILE=full
+      - run: make test-smoke
+      - run: make test-integration
+      - run: make dbt-test
+      - name: Keep the logs of a failed run
+        if: failure()
+        run: make logs-dump
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: compose-logs
+          path: compose.log
+          if-no-files-found: ignore

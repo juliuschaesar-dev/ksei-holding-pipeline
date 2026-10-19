@@ -1,0 +1,297 @@
+version: 2
+
+models:
+  - name: fact_security_monthly
+    description: >
+      One row per period and security, projected from the master satellite of the vault (the
+      version currently in force): the attributes that change from month to month (description,
+      type, issuer, status, exchange, currency, dates, interest). Used to add the type and the
+      currency to the holding facts and the mart. KSEI reformats some descriptions and issuer
+      names over time, so each period keeps the text KSEI published in it. KSEI occasionally reuses one
+      code for two ISINs (for example two SRBI); the holding file only has the code, so the row
+      with the lowest ISIN is kept.
+    columns:
+      - name: period
+        description: Release date of the file.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_period')
+                field: date_actual
+      - name: security_code
+        description: KSEI security code.
+        data_tests: [not_null]
+      - name: description
+        description: Security description as KSEI publishes it in that period.
+      - name: security_type
+        description: Upper-cased security type.
+        data_tests: [not_null]
+      - name: issuer
+        description: Issuer name as KSEI publishes it in that period.
+      - name: exercise_price
+        description: Exercise price (warrants and rights); 0 when the file has none.
+      - name: nominal_value
+        description: Nominal value per security; 0 when the file has none.
+      - name: num_of_sec
+        description: Number of securities in the master file.
+      - name: originated_amt
+        description: Originated amount.
+      - name: current_amt
+        description: Current amount.
+      - name: total_scripless
+        description: Total scripless amount.
+      - name: local_pct
+        description: Local ownership percentage as published in the master file.
+      - name: foreign_pct
+        description: Foreign ownership percentage as published in the master file.
+      - name: total_pct
+        description: Total ownership percentage as published in the master file.
+      - name: closing_price
+        description: Closing price in the master file.
+      - name: currency
+        description: Trading currency, IDR or USD.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [IDR, USD]
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [period, security_code]
+
+  - name: fact_holding_monthly
+    description: >
+      Holdings in long form: one row per period, security, local or foreign, and investor type.
+      Rows with a zero quantity are left out. Carries the security type of the holding file.
+      Answers Q2 by investor type and feeds the mart.
+    columns:
+      - name: holding_key
+        description: Surrogate key of the grain (period, security code, residency, investor type).
+        data_tests: [not_null, unique]
+      - name: period
+        description: Release date of the file.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_period')
+                field: date_actual
+      - name: security_type
+        description: Upper-cased security type as the holding file gives it; present for every security.
+        data_tests: [not_null]
+      - name: residency
+        description: Whether the holder is local or foreign.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [local, foreign]
+      - name: investor_type
+        description: KSEI investor-type code (the codes are the investor_types var of the project).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: "{{ var('investor_types').keys() | map('upper') | list }}"
+      - name: investor_type_name
+        description: >
+          The name the investor type is shown with, from the investor_types var; the names come from the
+          dashboard design, not from a KSEI document.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: "{{ var('investor_types').values() | list }}"
+      - name: quantity
+        description: Number of securities held (nominal amount for bonds).
+        data_tests: [not_null]
+      - name: total_quantity
+        description: >
+          Source total of the row's residency (local_total or foreign_total), repeated on every
+          investor-type row of that residency; do not sum it across rows.
+      - name: sec_num
+        description: >
+          Number of securities from the holding file, repeated on every row of the security and
+          period; do not sum it across rows.
+      - name: price
+        description: Price per security from the holding file.
+      - name: holding_value
+        description: Quantity times price, in the price currency of the security.
+      - name: is_latest_period
+        description: 1 on the rows of the newest period of the table, 0 on the others.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+  - name: mart_foreign_ownership_monthly
+    description: >
+      Local and foreign holding value per period and security type, the foreign share, and the
+      change against the previous period. IDR securities only. Answers Q1 and Q3.
+    columns:
+      - name: period
+        description: Release date of the file.
+        data_tests: [not_null]
+      - name: security_type
+        description: >
+          Security type from the holding file, so every security has one.
+        data_tests: [not_null]
+      - name: local_value
+        description: Value held by local investors.
+      - name: foreign_value
+        description: Value held by foreign investors.
+      - name: total_value
+        description: Local plus foreign value.
+      - name: foreign_share_pct
+        description: Foreign value as a percentage of the total; NULL when the total is zero.
+      - name: previous_period
+        description: Previous release of the same security type; NULL for the first one.
+      - name: foreign_value_change
+        description: Foreign value minus the previous period value; NULL for the first period.
+      - name: foreign_share_change_pp
+        description: Change of the foreign share in percentage points; NULL for the first period.
+      - name: is_latest_period
+        description: 1 on the rows of the newest period of the table, 0 on the others.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [period, security_type]
+
+  - name: mart_investor_type_monthly
+    description: >
+      Per period and investor type: how much it holds, how much of that is foreign, and its rank by
+      value (1 is the largest holder group). Rebuilt in full on every run. Feeds the card of the
+      largest holder group on the dashboard.
+    columns:
+      - name: period
+        description: Release date of the file.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_period')
+                field: date_actual
+      - name: investor_type
+        description: KSEI investor-type code.
+        data_tests: [not_null]
+      - name: investor_type_name
+        description: The name the investor type is shown with (from the investor_types var).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: "{{ var('investor_types').values() | list }}"
+      - name: holding_value
+        description: Local plus foreign value held by the investor type in the period.
+      - name: foreign_value
+        description: The part of holding_value held by foreign investors.
+      - name: foreign_share_pct
+        description: Foreign value as a percentage of the value held; NULL when nothing is held.
+      - name: holder_rank
+        description: Rank of the investor type within its period by value held; 1 is the largest.
+        data_tests: [not_null]
+      - name: is_latest_period
+        description: 1 on the rows of the newest period of the table, 0 on the others.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [period, investor_type]
+
+  - name: dim_period
+    description: >
+      The calendar: one row per day from 2000-01-01 to 2050-12-31, loaded once from a static file
+      into bronze.stg_period and read from there directly. The vault is skipped on purpose: a
+      calendar is reference data, not a business entity of KSEI. Join `date_actual` to the `period`
+      of the facts (the release date) to group by month, quarter or year. It keeps every column
+      of bronze.stg_period under its own name, lineage columns included.
+    columns:
+      - name: date_actual
+        description: The calendar day; the key of the dimension.
+        data_tests: [not_null, unique]
+      - name: date_actual_time
+        description: The calendar day as a timestamp at midnight.
+      - name: day_suffix
+        description: Day of the month with its English ordinal suffix, for example 1st.
+      - name: day_name
+        description: English name of the weekday.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+      - name: day_of_week
+        description: ISO weekday number, 1 for Monday to 7 for Sunday.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+      - name: day_of_month
+        description: Day of the month, 1 to 31.
+      - name: day_of_quarter
+        description: Day of the quarter, 1 to 92.
+      - name: day_of_year
+        description: Day of the year, 1 to 366.
+      - name: week_of_month
+        description: Week of the month, 1 to 5.
+      - name: week_of_year
+        description: Week of the year as the source file counts it, 1 to 53.
+      - name: week_of_year_iso
+        description: ISO week label such as 2026-W40-3 (year, week, weekday); NULL where the source file leaves it empty.
+      - name: month_actual
+        description: Month number, 1 to 12.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      - name: month_name
+        description: English name of the month.
+      - name: month_name_abbreviated
+        description: Three-letter English abbreviation of the month.
+      - name: quarter_actual
+        description: Quarter number, 1 to 4.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+      - name: quarter_name
+        description: Quarter written out as First, Second, Third or Fourth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [First, Second, Third, Fourth]
+      - name: year_actual
+        description: Calendar year.
+      - name: first_day_of_week
+        description: Monday of the week.
+      - name: last_day_of_week
+        description: Sunday of the week.
+      - name: first_day_of_month
+        description: First day of the month.
+      - name: last_day_of_month
+        description: Last day of the month.
+      - name: first_day_of_quarter
+        description: First day of the quarter.
+      - name: last_day_of_quarter
+        description: Last day of the quarter.
+      - name: first_day_of_year
+        description: First day of the year.
+      - name: last_day_of_year
+        description: Last day of the year.
+      - name: weekend_flag
+        description: 1 for Saturday and Sunday, otherwise 0.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+      - name: _source_file
+        description: Name of the file the row was loaded from.
+      - name: _ingested_at
+        description: When the file was parsed into bronze.

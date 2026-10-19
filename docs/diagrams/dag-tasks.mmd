@@ -1,0 +1,5 @@
+flowchart LR
+    D["detect_new_periods<br/>archive vs _period in ClickHouse"] --> DL["download_to_bronze"]
+    DL --> P["parse_to_parquet"]
+    P --> L["load_bronze<br/>drop partition, insert"]
+    L --> B["dbt_build<br/>silver then gold, with data tests"]

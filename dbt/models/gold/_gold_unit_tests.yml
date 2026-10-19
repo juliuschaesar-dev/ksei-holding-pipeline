@@ -1,0 +1,277 @@
+version: 2
+
+unit_tests:
+  - name: fact_security_monthly_cleans_the_vault_attributes_and_keeps_the_lowest_isin
+    model: fact_security_monthly
+    given:
+      - input: ref('satellite_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp,meta_is_active,is_deleted,description,type,issuer,status,stock_exchange,listing_date,form,maturity_date,interest,interest_type,sector,exercise_price,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,closing_price
+          d1872d0b22792f1682fce8e1772e3ccb,2026-09-30,d2,2026-10-07 12:00:00.000,1,0,B TBK,sukuk ,B PT,ACTIVE,IDX,2000-01-03,Electronic,1970-01-01,0,,,0,0,0,0,0,0,0,0,0,0
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,d1,2026-10-07 12:00:00.000,1,0,A TBK,equity ,A PT,active,,1970-01-01,Electronic,2030-01-01,5.65,Fixed,financial institution,0,0,0,0,0,0,0,0,0,0
+      - input: ref('link_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,hmd5_security,hmd5_isin,hmd5_currency
+          4a68dc8f56e3c44b8248820410d7e1dc,098890dde069e9abad63f19a0d9e1f32,c47fef24831146ffad62aa650e5405b8,662f521b12c240d2c3c195f3df817b0c
+          d1872d0b22792f1682fce8e1772e3ccb,098890dde069e9abad63f19a0d9e1f32,b81686f1b6cf990fcfea50e841e12a4c,662f521b12c240d2c3c195f3df817b0c
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+      - input: ref('hub_isin')
+        format: csv
+        rows: |
+          hmd5_isin,isin_code
+          c47fef24831146ffad62aa650e5405b8,ISIN_A
+          b81686f1b6cf990fcfea50e841e12a4c,ISIN_B
+      - input: ref('hub_currency')
+        format: csv
+        rows: |
+          hmd5_currency,currency
+          662f521b12c240d2c3c195f3df817b0c,IDR
+    expect:
+      format: csv
+      rows: |
+        period,security_code,isin_code,description,security_type,issuer,status,stock_exchange,listing_date,currency,maturity_date,interest_rate,interest_type,sector
+        2026-09-30,AAAA,ISIN_A,A TBK,EQUITY,A PT,ACTIVE,,,IDR,2030-01-01,5.65,FIXED,FINANCIAL INSTITUTION
+
+  - name: fact_security_monthly_keeps_every_measure_of_the_master_file
+    model: fact_security_monthly
+    given:
+      - input: ref('satellite_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp,meta_is_active,is_deleted,description,type,issuer,status,stock_exchange,listing_date,form,maturity_date,interest,interest_type,sector,exercise_price,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,closing_price
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,m1,2026-10-07 12:00:00.000,1,0,A TBK,EQUITY,A TBK PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,5.65,Fixed,,12.5,100,1000,5000.5,4000.25,3000,60.5,39.5,100,7.75
+      - input: ref('link_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,hmd5_security,hmd5_isin,hmd5_currency
+          4a68dc8f56e3c44b8248820410d7e1dc,098890dde069e9abad63f19a0d9e1f32,c47fef24831146ffad62aa650e5405b8,662f521b12c240d2c3c195f3df817b0c
+          d1872d0b22792f1682fce8e1772e3ccb,098890dde069e9abad63f19a0d9e1f32,b81686f1b6cf990fcfea50e841e12a4c,662f521b12c240d2c3c195f3df817b0c
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+      - input: ref('hub_isin')
+        format: csv
+        rows: |
+          hmd5_isin,isin_code
+          c47fef24831146ffad62aa650e5405b8,ISIN_A
+          b81686f1b6cf990fcfea50e841e12a4c,ISIN_B
+      - input: ref('hub_currency')
+        format: csv
+        rows: |
+          hmd5_currency,currency
+          662f521b12c240d2c3c195f3df817b0c,IDR
+    expect:
+      format: csv
+      rows: |
+        security_code,interest_rate,exercise_price,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,closing_price
+        AAAA,5.65,12.5,100,1000,5000.5,4000.25,3000,60.5,39.5,100,7.75
+
+  - name: fact_security_monthly_uses_only_the_current_version_of_a_changed_row
+    model: fact_security_monthly
+    given:
+      - input: ref('satellite_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp,meta_is_active,is_deleted,description,type,issuer,status,stock_exchange,listing_date,form,maturity_date,interest,interest_type,sector,exercise_price,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,closing_price
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,old,2026-10-01 00:00:00.000,0,0,A TBK,EQUITY,A TBK PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,OLD,0,0,0,0,0,0,0,0,0,0
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,new,2026-10-07 00:00:00.000,1,0,A TBK,EQUITY,A TBK PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,NEW,0,0,0,0,0,0,0,0,0,0
+      - input: ref('link_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,hmd5_security,hmd5_isin,hmd5_currency
+          4a68dc8f56e3c44b8248820410d7e1dc,098890dde069e9abad63f19a0d9e1f32,c47fef24831146ffad62aa650e5405b8,662f521b12c240d2c3c195f3df817b0c
+          d1872d0b22792f1682fce8e1772e3ccb,098890dde069e9abad63f19a0d9e1f32,b81686f1b6cf990fcfea50e841e12a4c,662f521b12c240d2c3c195f3df817b0c
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+      - input: ref('hub_isin')
+        format: csv
+        rows: |
+          hmd5_isin,isin_code
+          c47fef24831146ffad62aa650e5405b8,ISIN_A
+          b81686f1b6cf990fcfea50e841e12a4c,ISIN_B
+      - input: ref('hub_currency')
+        format: csv
+        rows: |
+          hmd5_currency,currency
+          662f521b12c240d2c3c195f3df817b0c,IDR
+    expect:
+      format: csv
+      rows: |
+        security_code,sector
+        AAAA,NEW
+
+  - name: fact_security_monthly_keeps_each_period_of_a_code_and_its_description_separate
+    model: fact_security_monthly
+    given:
+      - input: ref('satellite_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp,meta_is_active,is_deleted,description,type,issuer,status,stock_exchange,listing_date,form,maturity_date,interest,interest_type,sector,exercise_price,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,closing_price
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-08-31,a1,2026-10-07 00:00:00.000,1,0,AUG NAME,EQUITY,AUG NAME PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,AUG,0,0,0,0,0,0,0,0,0,0
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,a2,2026-10-07 00:00:00.000,1,0,SEP NAME,EQUITY,SEP NAME PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,SEP,0,0,0,0,0,0,0,0,0,0
+      - input: ref('link_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,hmd5_security,hmd5_isin,hmd5_currency
+          4a68dc8f56e3c44b8248820410d7e1dc,098890dde069e9abad63f19a0d9e1f32,c47fef24831146ffad62aa650e5405b8,662f521b12c240d2c3c195f3df817b0c
+          d1872d0b22792f1682fce8e1772e3ccb,098890dde069e9abad63f19a0d9e1f32,b81686f1b6cf990fcfea50e841e12a4c,662f521b12c240d2c3c195f3df817b0c
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+      - input: ref('hub_isin')
+        format: csv
+        rows: |
+          hmd5_isin,isin_code
+          c47fef24831146ffad62aa650e5405b8,ISIN_A
+          b81686f1b6cf990fcfea50e841e12a4c,ISIN_B
+      - input: ref('hub_currency')
+        format: csv
+        rows: |
+          hmd5_currency,currency
+          662f521b12c240d2c3c195f3df817b0c,IDR
+    expect:
+      format: csv
+      rows: |
+        period,security_code,description,sector
+        2026-08-31,AAAA,AUG NAME,AUG
+        2026-09-30,AAAA,SEP NAME,SEP
+
+  - name: fact_security_monthly_leaves_out_a_security_deleted_at_the_source
+    model: fact_security_monthly
+    given:
+      - input: ref('satellite_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,period,md5_diff,load_timestamp,meta_is_active,is_deleted,description,type,issuer,status,stock_exchange,listing_date,form,maturity_date,interest,interest_type,sector,exercise_price,nominal_value,num_of_sec,originated_amt,current_amt,total_scripless,local_pct,foreign_pct,total_pct,closing_price
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,d1,2026-10-01 00:00:00.000,0,0,A TBK,EQUITY,A TBK PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,LIVE,0,0,0,0,0,0,0,0,0,0
+          4a68dc8f56e3c44b8248820410d7e1dc,2026-09-30,d1x,2026-10-07 00:00:00.000,1,1,A TBK,EQUITY,A TBK PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,LIVE,0,0,0,0,0,0,0,0,0,0
+          d1872d0b22792f1682fce8e1772e3ccb,2026-09-30,d2,2026-10-07 00:00:00.000,1,0,B TBK,EQUITY,B TBK PT,ACTIVE,,1970-01-01,Electronic,1970-01-01,0,,KEPT,0,0,0,0,0,0,0,0,0,0
+      - input: ref('link_master_securities')
+        format: csv
+        rows: |
+          lmd5_master_securities,hmd5_security,hmd5_isin,hmd5_currency
+          4a68dc8f56e3c44b8248820410d7e1dc,098890dde069e9abad63f19a0d9e1f32,c47fef24831146ffad62aa650e5405b8,662f521b12c240d2c3c195f3df817b0c
+          d1872d0b22792f1682fce8e1772e3ccb,098890dde069e9abad63f19a0d9e1f32,b81686f1b6cf990fcfea50e841e12a4c,662f521b12c240d2c3c195f3df817b0c
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+      - input: ref('hub_isin')
+        format: csv
+        rows: |
+          hmd5_isin,isin_code
+          c47fef24831146ffad62aa650e5405b8,ISIN_A
+          b81686f1b6cf990fcfea50e841e12a4c,ISIN_B
+      - input: ref('hub_currency')
+        format: csv
+        rows: |
+          hmd5_currency,currency
+          662f521b12c240d2c3c195f3df817b0c,IDR
+    expect:
+      format: csv
+      rows: |
+        isin_code,sector
+        ISIN_B,KEPT
+
+  - name: fact_unpivots_investor_types_drops_zero_quantities_and_values_them_and_cleans_the_type
+    model: fact_holding_monthly
+    given:
+      - input: ref('satellite_holding_composition')
+        format: csv
+        rows: |
+          hmd5_security,period,md5_diff,load_timestamp,meta_is_active,is_deleted,type,sec_num,price,local_total,foreign_total,local_is,local_cp,local_pf,local_ib,local_id,local_mf,local_sc,local_fd,local_ot,foreign_is,foreign_cp,foreign_pf,foreign_ib,foreign_id,foreign_mf,foreign_sc,foreign_fd,foreign_ot
+          098890dde069e9abad63f19a0d9e1f32,2026-09-30,d1,2026-10-07 12:00:00.000,1,0,equity ,1000,2,13,5,10,0,0,0,0,0,0,0,3,5,0,0,0,0,0,0,0,0
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+    expect:
+      format: csv
+      rows: |
+        holding_key,period,security_code,security_type,residency,investor_type,investor_type_name,quantity,price,holding_value,sec_num,total_quantity,is_latest_period
+        2026-09-30|AAAA|local|IS,2026-09-30,AAAA,EQUITY,local,IS,Insurance,10,2,20,1000,13,1
+        2026-09-30|AAAA|local|OT,2026-09-30,AAAA,EQUITY,local,OT,Others,3,2,6,1000,13,1
+        2026-09-30|AAAA|foreign|IS,2026-09-30,AAAA,EQUITY,foreign,IS,Insurance,5,2,10,1000,5,1
+
+  - name: fact_holding_flags_only_the_rows_of_the_latest_period
+    model: fact_holding_monthly
+    given:
+      - input: ref('satellite_holding_composition')
+        format: csv
+        rows: |
+          hmd5_security,period,md5_diff,load_timestamp,meta_is_active,is_deleted,type,sec_num,price,local_total,foreign_total,local_is,local_cp,local_pf,local_ib,local_id,local_mf,local_sc,local_fd,local_ot,foreign_is,foreign_cp,foreign_pf,foreign_ib,foreign_id,foreign_mf,foreign_sc,foreign_fd,foreign_ot
+          098890dde069e9abad63f19a0d9e1f32,2026-08-31,d1,2026-10-07 12:00:00.000,1,0,equity ,1000,2,10,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+          098890dde069e9abad63f19a0d9e1f32,2026-09-30,d1,2026-10-07 12:00:00.000,1,0,equity ,1000,2,10,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+      - input: ref('hub_security')
+        format: csv
+        rows: |
+          hmd5_security,code
+          098890dde069e9abad63f19a0d9e1f32,AAAA
+    expect:
+      format: csv
+      rows: |
+        period,is_latest_period
+        2026-08-31,0
+        2026-09-30,1
+
+  - name: mart_takes_the_type_from_the_holding_file_and_only_the_currency_from_the_master_file
+    model: mart_foreign_ownership_monthly
+    given:
+      - input: ref('fact_holding_monthly')
+        format: csv
+        rows: |
+          period,security_code,security_type,residency,holding_value
+          2026-08-31,AAAA,EQUITY,local,90
+          2026-08-31,AAAA,EQUITY,foreign,10
+          2026-09-30,AAAA,EQUITY,local,80
+          2026-09-30,AAAA,EQUITY,foreign,20
+          2026-09-30,USDB,SUKUK,foreign,1000
+          2026-09-30,ONLY,MUTUAL FUND,local,5
+      - input: ref('fact_security_monthly')
+        format: csv
+        rows: |
+          period,security_code,currency
+          2026-08-31,AAAA,IDR
+          2026-09-30,AAAA,IDR
+          2026-09-30,USDB,USD
+    expect:
+      format: csv
+      rows: |
+        period,security_type,local_value,foreign_value,total_value,foreign_share_pct,previous_period,foreign_value_change,foreign_share_change_pp,is_latest_period
+        2026-08-31,EQUITY,90,10,100,10,,,,0
+        2026-09-30,EQUITY,80,20,100,20,2026-08-31,10,10,1
+        2026-09-30,MUTUAL FUND,5,0,5,0,,,,1
+
+  - name: mart_investor_type_ranks_the_types_of_each_period_by_value
+    model: mart_investor_type_monthly
+    given:
+      - input: ref('fact_holding_monthly')
+        format: csv
+        rows: |
+          period,investor_type,investor_type_name,residency,holding_value
+          2026-08-31,CP,Corporate,local,10
+          2026-09-30,CP,Corporate,local,60
+          2026-09-30,CP,Corporate,foreign,20
+          2026-09-30,ID,Individual,local,50
+    expect:
+      format: csv
+      rows: |
+        period,investor_type,investor_type_name,holding_value,foreign_value,foreign_share_pct,holder_rank,is_latest_period
+        2026-08-31,CP,Corporate,10,0,0,1,0
+        2026-09-30,CP,Corporate,80,20,25,1,1
+        2026-09-30,ID,Individual,50,0,0,2,1

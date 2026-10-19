@@ -1,0 +1,27 @@
+version: 2
+
+# Hand-written: these fixtures hold no MD5 hashes, so they are not part of `make dbt-fixtures`.
+unit_tests:
+  - name: dim_period_keeps_every_column_of_stg_period_under_its_own_name
+    model: dim_period
+    given:
+      - input: source('bronze', 'stg_period')
+        rows:
+          - {date_actual: '2026-09-30', date_actual_time: '2026-09-30 00:00:00', day_name: Wednesday, day_of_week: 3, month_actual: 9, quarter_name: Third, week_of_year_iso: '2026-W40-3', first_day_of_month: '2026-09-01', last_day_of_year: '2026-12-31', weekend_flag: 0, _source_file: raw_period.csv, _ingested_at: '2026-10-18 12:00:00'}
+          - {date_actual: '2026-10-03', date_actual_time: '2026-10-03 00:00:00', day_name: Saturday, day_of_week: 6, month_actual: 10, quarter_name: Fourth, week_of_year_iso: '2026-W40-6', first_day_of_month: '2026-10-01', last_day_of_year: '2026-12-31', weekend_flag: 1, _source_file: raw_period.csv, _ingested_at: '2026-10-18 12:00:00'}
+    expect:
+      rows:
+        - {date_actual: '2026-09-30', date_actual_time: '2026-09-30 00:00:00', day_name: Wednesday, day_of_week: 3, month_actual: 9, quarter_name: Third, week_of_year_iso: '2026-W40-3', first_day_of_month: '2026-09-01', last_day_of_year: '2026-12-31', weekend_flag: 0, _source_file: raw_period.csv, _ingested_at: '2026-10-18 12:00:00'}
+        - {date_actual: '2026-10-03', date_actual_time: '2026-10-03 00:00:00', day_name: Saturday, day_of_week: 6, month_actual: 10, quarter_name: Fourth, week_of_year_iso: '2026-W40-6', first_day_of_month: '2026-10-01', last_day_of_year: '2026-12-31', weekend_flag: 1, _source_file: raw_period.csv, _ingested_at: '2026-10-18 12:00:00'}
+
+  - name: dim_period_restores_null_for_a_missing_iso_week
+    model: dim_period
+    given:
+      - input: source('bronze', 'stg_period')
+        rows:
+          - {date_actual: '2000-09-11', day_name: Monday, week_of_year_iso: '', weekend_flag: 0}
+          - {date_actual: '2000-09-12', day_name: Tuesday, week_of_year_iso: '2000-W37-2', weekend_flag: 0}
+    expect:
+      rows:
+        - {date_actual: '2000-09-11', week_of_year_iso: null}
+        - {date_actual: '2000-09-12', week_of_year_iso: '2000-W37-2'}

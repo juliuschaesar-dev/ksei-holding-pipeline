@@ -1,0 +1,362 @@
+dashboard_title: KSEI foreign vs local ownership
+description: null
+css: "/* KSEI ownership monitor: light page, white rounded cards, a bold title. */\n\
+  body,\n.dashboard,\n.dashboard-content,\n.ant-layout,\n.ant-layout-content {\n \
+  \ background-color: #eef1f6 !important;\n}\n\n.dashboard-component-chart-holder,\n\
+  .dashboard-component-markdown .markdown {\n  background-color: #ffffff;\n  border-radius:\
+  \ 20px;\n  border: 0;\n  box-shadow: none;\n}\n\n.dashboard-markdown,\n.dashboard-component-markdown\
+  \ {\n  color: #0f1a2b;\n}\n\n.dashboard-markdown h1 {\n  margin: 0;\n  font-size:\
+  \ 44px;\n  font-weight: 800;\n  line-height: 1.05;\n  letter-spacing: -0.02em;\n\
+  }\n\n.dashboard-markdown p {\n  font-family: ui-monospace, Menlo, Consolas, monospace;\n\
+  \  font-size: 11px;\n  letter-spacing: 0.12em;\n  color: #4a5568;\n}\n\n.dashboard-component-markdown:first-child\
+  \ .markdown,\n.dashboard-component-markdown .markdown {\n  background-color: transparent;\n\
+  }\n\n.header-title,\n.chart-header .header-title {\n  font-weight: 700;\n  color:\
+  \ #0f1a2b;\n}\n\n/* The image export lays each card out at the height of its content,\
+  \ not at the height the dashboard\n   gives it, so cards of one row came out uneven.\
+  \ Every card of the small rows gets the same minimum\n   height (28 grid units =\
+  \ 224px, as in the layout): none of them is taller than that by itself. */\n[class*=\"\
+  dashboard-chart-id-\"] {\n  min-height: 224px;\n}\n\n/* the image export draws a\
+  \ chart card 10px taller than its minimum height, a Markdown card exactly at it\
+  \ */\n.dashboard-markdown:has(h1) .dashboard-component-chart-holder {\n  min-height:\
+  \ 234px;\n}\n"
+slug: ksei-ownership
+certified_by: null
+certification_details: null
+published: true
+uuid: 7f7f4592-5737-4349-87c5-3cb2d5a45229
+position:
+  CHART-HOLDER:
+    children: []
+    id: CHART-HOLDER
+    meta:
+      chartId: 9
+      height: 28
+      sliceName: Largest holder group
+      uuid: b06b8667-f62c-481e-8941-11aba3a64b0a
+      width: 3
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KPI
+    type: CHART
+  CHART-LATEST:
+    children: []
+    id: CHART-LATEST
+    meta:
+      chartId: 2
+      height: 28
+      sliceName: Latest period
+      uuid: c421b226-169c-4151-b2c5-97ad5c229e47
+      width: 4
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-HEAD
+    type: CHART
+  CHART-PEAK:
+    children: []
+    id: CHART-PEAK
+    meta:
+      chartId: 8
+      height: 28
+      sliceName: Change since peak
+      uuid: 1b47f95d-244c-4dbb-9165-329e91ab5608
+      width: 3
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KPI
+    type: CHART
+  CHART-Q1:
+    children: []
+    id: CHART-Q1
+    meta:
+      chartId: 1
+      height: 56
+      sliceName: Q1 Foreign share of ownership over time
+      uuid: 1c71eb1c-62e2-431d-9df3-81fff2277f8c
+      width: 9
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-Q1
+    type: CHART
+  CHART-Q2:
+    children: []
+    id: CHART-Q2
+    meta:
+      chartId: 3
+      height: 48
+      sliceName: Q2 Ownership by investor type
+      uuid: 793c4513-8e36-433a-8ccc-001608689603
+      width: 7
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-Q2
+    type: CHART
+  CHART-Q3:
+    children: []
+    id: CHART-Q3
+    meta:
+      chartId: 4
+      height: 48
+      sliceName: Q3 Biggest moves in foreign share
+      uuid: d521cc50-927e-42ef-b8e3-36a6ad268842
+      width: 5
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-Q2
+    type: CHART
+  CHART-SHARE:
+    children: []
+    id: CHART-SHARE
+    meta:
+      chartId: 6
+      height: 28
+      sliceName: Foreign share of value
+      uuid: c48e1e8c-274c-4348-95cc-1bcb26fdd973
+      width: 3
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KPI
+    type: CHART
+  CHART-SPLIT:
+    children: []
+    id: CHART-SPLIT
+    meta:
+      chartId: 10
+      height: 56
+      sliceName: Local vs foreign split
+      uuid: 276ddcb2-e8ac-4358-bb82-0567d401a36e
+      width: 3
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-Q1
+    type: CHART
+  CHART-TOTAL:
+    children: []
+    id: CHART-TOTAL
+    meta:
+      chartId: 7
+      height: 28
+      sliceName: Total value held
+      uuid: ef212830-c7e9-4e0c-9c94-f6a054715815
+      width: 3
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-KPI
+    type: CHART
+  DASHBOARD_VERSION_KEY: v2
+  GRID_ID:
+    children:
+    - ROW-HEAD
+    - ROW-KPI
+    - ROW-Q1
+    - ROW-Q2
+    - ROW-FOOT
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: KSEI foreign vs local ownership
+    type: HEADER
+  MARKDOWN-FOOT:
+    children: []
+    id: MARKDOWN-FOOT
+    meta:
+      code: "Source: KSEI ownership statistics \xB7 values in IDR \xB7 T = trillion\
+        \ (10\xB9\xB2)"
+      height: 6
+      width: 12
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-FOOT
+    type: MARKDOWN
+  MARKDOWN-HEAD:
+    children: []
+    id: MARKDOWN-HEAD
+    meta:
+      code: "KSEI \xB7 SECURITIES OWNERSHIP MONITOR\n\n# Who owns the market:\n# foreign\
+        \ vs local\n"
+      height: 28
+      width: 8
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-HEAD
+    type: MARKDOWN
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  ROW-FOOT:
+    children:
+    - MARKDOWN-FOOT
+    id: ROW-FOOT
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-HEAD:
+    children:
+    - MARKDOWN-HEAD
+    - CHART-LATEST
+    id: ROW-HEAD
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-KPI:
+    children:
+    - CHART-SHARE
+    - CHART-TOTAL
+    - CHART-PEAK
+    - CHART-HOLDER
+    id: ROW-KPI
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-Q1:
+    children:
+    - CHART-Q1
+    - CHART-SPLIT
+    id: ROW-Q1
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+  ROW-Q2:
+    children:
+    - CHART-Q2
+    - CHART-Q3
+    id: ROW-Q2
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    type: ROW
+metadata:
+  color_scheme: supersetColors
+  label_colors:
+    local: '#F4A259'
+    foreign: '#2547D0'
+    foreign_share: '#2547D0'
+    Corporate: '#0F1A2B'
+    Individual: '#0F1A2B'
+    Mutual fund: '#0F1A2B'
+    Financial institution: '#0F1A2B'
+    Others: '#0F1A2B'
+    Insurance: '#0F1A2B'
+    Pension fund: '#0F1A2B'
+    Securities company: '#0F1A2B'
+    Foundation: '#0F1A2B'
+  shared_label_colors:
+  - foreign
+  - local
+  map_label_colors: {}
+  refresh_frequency: 0
+  cross_filters_enabled: false
+  native_filter_configuration:
+  - id: NATIVE_FILTER-date-range
+    name: Date range
+    filterType: filter_time
+    type: NATIVE_FILTER
+    description: ''
+    targets:
+    - {}
+    controlValues: {}
+    defaultDataMask:
+      extraFormData: {}
+      filterState: {}
+      ownState: {}
+    cascadeParentIds: []
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded:
+      - 2
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 3
+      - 4
+  - id: NATIVE_FILTER-security-type
+    name: Security type
+    filterType: filter_select
+    type: NATIVE_FILTER
+    description: ''
+    targets:
+    - column:
+        name: security_type
+      datasetUuid: 1f3f0a30-5b08-4b94-8eb8-232026d6717a
+    controlValues:
+      enableEmptyFilter: false
+      defaultToFirstItem: false
+      multiSelect: true
+      searchAllOptions: false
+      inverseSelection: false
+      sortAscending: false
+    defaultDataMask:
+      extraFormData: {}
+      filterState: {}
+      ownState: {}
+    cascadeParentIds: []
+    scope:
+      rootPath:
+      - ROOT_ID
+      excluded:
+      - 10
+      - 3
+      - 9
+      - 2
+      - 8
+  chart_configuration: {}
+  filter_bar_orientation: HORIZONTAL
+  default_filters: '{}'
+  timed_refresh_immune_slices: []
+  expanded_slices: {}
+  color_scheme_domain:
+  - '#1FA8C9'
+  - '#454E7C'
+  - '#5AC189'
+  - '#FF7F44'
+  - '#666666'
+  - '#E04355'
+  - '#FCC700'
+  - '#A868B7'
+  - '#3CCCCB'
+  - '#A38F79'
+  - '#8FD3E4'
+  - '#A1A6BD'
+  - '#ACE1C4'
+  - '#FEC0A1'
+  - '#B2B2B2'
+  - '#EFA1AA'
+  - '#FDE380'
+  - '#D3B3DA'
+  - '#9EE5E5'
+  - '#D1C6BC'
+theme_uuid: null
+version: 1.0.0

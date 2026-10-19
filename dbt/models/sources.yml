@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Typed tables loaded by the Airflow `load_bronze` task, one partition per period.
+    schema: bronze
+    loaded_at_field: _ingested_at
+    freshness:
+      # KSEI releases monthly; flag the data when two release cycles are missed.
+      warn_after: {count: 45, period: day}
+      error_after: {count: 75, period: day}
+    tables:
+      - name: stg_holding_composition
+        description: Holding composition (local vs foreign) per security, one row per period, code and type.
+      - name: stg_master_securities
+        description: Securities master file, one row per period and security code.
+      - name: stg_period
+        description: >
+          Calendar of reporting periods, one row per day (2000-01-01 to 2050-12-31). Loaded once
+          by the `period-init` service from a static file, not by the monthly DAG.
+        freshness: null  # a static file: it never refreshes

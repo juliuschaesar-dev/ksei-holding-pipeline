@@ -1,0 +1,55 @@
+slice_name: Largest holder group
+description: null
+certified_by: null
+certification_details: null
+viz_type: handlebars
+params:
+  datasource: 3__table
+  viz_type: handlebars
+  extra_form_data: {}
+  dashboards: []
+  adhoc_filters:
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: is_latest_period = 1
+    subject: null
+    operator: null
+    comparator: null
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: holder_rank = 1
+    subject: null
+    operator: null
+    comparator: null
+  annotation_layers: []
+  query_mode: aggregate
+  groupby: []
+  metrics:
+  - expressionType: SQL
+    sqlExpression: any(investor_type_name)
+    label: holder_group
+    hasCustomLabel: true
+  - expressionType: SQL
+    sqlExpression: concat(if(toUInt64(round(sum(holding_value) / 1e12)) >= 1000, concat(toString(intDiv(toUInt64(round(sum(holding_value)
+      / 1e12)), 1000)), ',', lpad(toString(toUInt64(round(sum(holding_value) / 1e12))
+      % 1000), 3, '0')), toString(toUInt64(round(sum(holding_value) / 1e12)))), '
+      T')
+    label: held
+    hasCustomLabel: true
+  - expressionType: SQL
+    sqlExpression: concat(toString(round(max(foreign_share_pct))), '%')
+    label: foreign_pct
+    hasCustomLabel: true
+  all_columns: []
+  row_limit: 10
+  order_desc: true
+  include_time: false
+  handlebarsTemplate: "<div style='padding:10px 0 0 4px'>{{#each data}}<div style='font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-0.02em;color:#0f1a2b'>{{holder_group}}</div><div\
+    \ style='margin-top:14px;font-size:14px;color:#4a5568'>{{held}} held \xB7 {{foreign_pct}}\
+    \ of it foreign</div>{{/each}}</div>"
+  styleTemplate: ''
+query_context: null
+cache_timeout: null
+uuid: b06b8667-f62c-481e-8941-11aba3a64b0a
+version: 1.0.0
+dataset_uuid: 30f8e9d7-3745-465c-9fa8-fd52cabb2f44

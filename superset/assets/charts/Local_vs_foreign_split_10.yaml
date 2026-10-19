@@ -1,0 +1,45 @@
+slice_name: Local vs foreign split
+description: null
+certified_by: null
+certification_details: null
+viz_type: pie
+params:
+  datasource: 2__table
+  viz_type: pie
+  extra_form_data: {}
+  dashboards: []
+  adhoc_filters:
+  - expressionType: SQL
+    clause: WHERE
+    sqlExpression: is_latest_period = 1
+    subject: null
+    operator: null
+    comparator: null
+  annotation_layers: []
+  groupby:
+  - residency
+  metric:
+    expressionType: SQL
+    sqlExpression: sum(holding_value) / 1e12
+    label: holding_value
+    hasCustomLabel: true
+  row_limit: 10
+  sort_by_metric: true
+  color_scheme: supersetColors
+  show_labels: true
+  label_type: percent
+  number_format: $,.0f
+  show_legend: true
+  legendType: plain
+  legendOrientation: bottom
+  donut: true
+  innerRadius: 62
+  outerRadius: 82
+  show_total: true
+  labels_outside: false
+  label_line: false
+query_context: null
+cache_timeout: null
+uuid: 276ddcb2-e8ac-4358-bb82-0567d401a36e
+version: 1.0.0
+dataset_uuid: 0f7c5a13-27bc-4cf0-87ea-86146502663a

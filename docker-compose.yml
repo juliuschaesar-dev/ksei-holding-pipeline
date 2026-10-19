@@ -1,0 +1,258 @@
+# One Airflow image for every Airflow service; shared settings live in the anchor below.
+x-airflow-common: &airflow-common
+  image: ksei-airflow:local
+  build:
+    context: .
+    dockerfile: airflow/Dockerfile
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: ${AIRFLOW_ADMIN_USER}:admin
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/config/simple_auth_passwords.json
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_API_SECRET_KEY}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${AIRFLOW_DB}
+    AIRFLOW__CELERY__BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${AIRFLOW_DB}
+    AIRFLOW__LOGGING__REMOTE_LOGGING: "true"
+    AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: s3://${S3_LOGS_BUCKET}
+    AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: ksei_s3
+    AIRFLOW_CONN_KSEI_S3: '{"conn_type":"aws","login":"${S3_ACCESS_KEY}","password":"${S3_SECRET_KEY}","extra":{"endpoint_url":"${S3_ENDPOINT_URL}","region_name":"us-east-1","config_kwargs":{"s3":{"addressing_style":"path"}}}}'
+    S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
+    S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+    S3_SECRET_KEY: ${S3_SECRET_KEY}
+    S3_BUCKET: ${S3_BUCKET}
+    S3_LOGS_BUCKET: ${S3_LOGS_BUCKET}
+    CLICKHOUSE_HOST: ${CLICKHOUSE_HOST}
+    CLICKHOUSE_HTTP_PORT: ${CLICKHOUSE_HTTP_PORT}
+    CLICKHOUSE_PIPELINE_USER: ${CLICKHOUSE_PIPELINE_USER}
+    CLICKHOUSE_PIPELINE_PASSWORD: ${CLICKHOUSE_PIPELINE_PASSWORD}
+    KSEI_USER_AGENT: ${KSEI_USER_AGENT}
+    KSEI_BASE_URL: ${KSEI_BASE_URL}
+    KSEI_MIN_DELAY_SECONDS: ${KSEI_MIN_DELAY_SECONDS}
+    PERIOD_SOURCE_URL: ${PERIOD_SOURCE_URL}
+  volumes:
+    - airflow-config:/opt/airflow/config
+  depends_on: &airflow-depends
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    seaweedfs:
+      condition: service_healthy
+    airflow-init:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_DB}
+      SUPERSET_DB: ${SUPERSET_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./infra/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${AIRFLOW_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8.10
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.48
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    ports:
+      - "8333:8333"
+      - "127.0.0.1:9333:9333"  # master UI
+      - "127.0.0.1:8888:8888"  # filer UI: browse buckets and files
+    volumes:
+      - seaweedfs-data:/data
+      - ./infra/seaweedfs/entrypoint.sh:/entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://$$(hostname -i):9333/cluster/healthz >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_ADMIN_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_ADMIN_PASSWORD}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+      CLICKHOUSE_PIPELINE_USER: ${CLICKHOUSE_PIPELINE_USER}
+      CLICKHOUSE_PIPELINE_PASSWORD: ${CLICKHOUSE_PIPELINE_PASSWORD}
+      CLICKHOUSE_SUPERSET_USER: ${CLICKHOUSE_SUPERSET_USER}
+      CLICKHOUSE_SUPERSET_PASSWORD: ${CLICKHOUSE_SUPERSET_PASSWORD}
+      CLICKHOUSE_S3_URL: ${S3_ENDPOINT_URL}/${S3_BUCKET}/
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    ports:
+      - "8123:8123"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./infra/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      - ./infra/clickhouse/config.d/named_collections.xml:/etc/clickhouse-server/config.d/named_collections.xml:ro
+    configs:
+      - source: clickhouse_admin_named_collections
+        target: /etc/clickhouse-server/users.d/admin_named_collections.xml
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8123/ping | grep -q Ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  airflow-init:
+    <<: *airflow-common
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    command:
+      - bash
+      - -c
+      - |
+        set -euo pipefail
+        airflow db migrate
+        airflow pools set ksei_http 1 "Rate-limits requests to KSEI (one at a time)"
+        python /opt/airflow/infra/create_buckets.py
+        python -c "import json, os; json.dump({os.environ['AIRFLOW_ADMIN_USER']: os.environ['AIRFLOW_ADMIN_PASSWORD']}, open('/opt/airflow/config/simple_auth_passwords.json', 'w'))"
+    environment:
+      <<: *airflow-env
+      AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+
+  # Loads the period calendar into bronze on the first start; later starts find it and do nothing.
+  period-init:
+    <<: *airflow-common
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
+    command: ["bash", "-c", "python /opt/airflow/infra/init_period.py"]
+    restart: "on-failure:3"
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: api-server
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --local"]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: dag-processor
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type DagProcessorJob --hostname \"$${HOSTNAME}\""]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    environment:
+      <<: *airflow-env
+      DUMB_INIT_SETSID: "0"
+    healthcheck:
+      test: ["CMD-SHELL", "celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d \"celery@$${HOSTNAME}\""]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: triggerer
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type TriggererJob --hostname \"$${HOSTNAME}\""]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 30s
+
+  superset:
+    profiles: ["full"]
+    image: ksei-superset:local
+    build:
+      context: ./superset
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+      SUPERSET_DATABASE_URI: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${SUPERSET_DB}
+      SUPERSET_ADMIN_USER: ${SUPERSET_ADMIN_USER}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD}
+      CLICKHOUSE_HOST: ${CLICKHOUSE_HOST}
+      CLICKHOUSE_HTTP_PORT: ${CLICKHOUSE_HTTP_PORT}
+      CLICKHOUSE_SUPERSET_USER: ${CLICKHOUSE_SUPERSET_USER}
+      CLICKHOUSE_SUPERSET_PASSWORD: ${CLICKHOUSE_SUPERSET_PASSWORD}
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8088/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+# The admin user's name comes from .env, so it cannot be a fixed XML element in the repository.
+configs:
+  clickhouse_admin_named_collections:
+    content: |
+      <clickhouse>
+        <users>
+          <${CLICKHOUSE_ADMIN_USER}>
+            <named_collection_control>1</named_collection_control>
+          </${CLICKHOUSE_ADMIN_USER}>
+        </users>
+      </clickhouse>
+
+volumes:
+  postgres-data:
+  seaweedfs-data:
+  clickhouse-data:
+  airflow-config:
