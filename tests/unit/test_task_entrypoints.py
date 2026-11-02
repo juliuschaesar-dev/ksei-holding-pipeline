@@ -10,6 +10,7 @@ from moto import mock_aws
 from ksei.config import DATASETS, Settings
 from ksei.storage import Storage, ensure_buckets, s3_client
 from ksei.tasks import run_detect, run_download, run_load, run_parse
+from tests.unit.test_client import mock_archive
 from tests.unit.test_config import ENV
 from tests.unit.test_parser import holding_row, release_zip
 
@@ -42,15 +43,17 @@ def storage():
 
 @respx.mock
 def test_run_detect_returns_the_unloaded_periods_as_plain_strings() -> None:
-    page = (FIXTURES / "archive_holding_2025.html").read_text(encoding="utf-8")
-    respx.get(f"{KSEI}{HOLDING.archive_path}").respond(200, text=page.replace("2026", "2025"))
-    respx.get(f"{KSEI}{HOLDING.archive_path}/2026").respond(200, text="")  # not offered any more
+    page = (FIXTURES / "archive_holding_page2.html").read_text(encoding="utf-8")
+    mock_archive(f"{KSEI}{HOLDING.archive_path}", page)
     respx.post(CLICKHOUSE).respond(200, text="")  # nothing loaded yet
 
     result = run_detect(SETTINGS, HOLDING)
 
     assert result == [
-        {"period": "2025-12-30", "url": f"{KSEI}/Download/BalanceposEfek20251230.zip"}
+        {
+            "period": "2025-12-30",
+            "url": "https://www.ksei.co.id/storage/Download/BalanceposEfek20251230.zip",
+        }
     ]
 
 

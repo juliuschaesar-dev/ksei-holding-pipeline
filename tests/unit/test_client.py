@@ -13,8 +13,9 @@ pytestmark = pytest.mark.unit
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 HOLDING = DATASETS["holding_composition"]
-BASE = "https://web.ksei.co.id"
-ZIP_URL = f"{BASE}/Download/x.zip"
+BASE = "https://www.ksei.co.id"
+DOWNLOADS = f"{BASE}/storage/Download"
+ZIP_URL = f"{DOWNLOADS}/x.zip"
 ARCHIVE = f"{BASE}{HOLDING.archive_path}"
 MASTER_ARCHIVE = f"{BASE}{DATASETS['master_securities'].archive_path}"
 
@@ -56,20 +57,58 @@ def fixture_text(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
 
 
-def mock_holding_pages() -> None:
-    respx.get(ARCHIVE).respond(200, text=fixture_text("archive_holding_2026.html"))
-    respx.get(f"{ARCHIVE}/2025").respond(200, text=fixture_text("archive_holding_2025.html"))
+def mock_archive(url: str, *pages: str) -> respx.Route:
+    """Serve a paged archive: page 1 has no query, page N is `?page=N`; later pages are empty."""
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        number = int(request.url.params.get("page", "1"))
+        return httpx.Response(200, text=pages[number - 1] if number <= len(pages) else "<html/>")
+
+    return respx.get(url).mock(side_effect=respond)
+
+
+def mock_holding_pages() -> respx.Route:
+    return mock_archive(
+        ARCHIVE,
+        fixture_text("archive_holding_page1.html"),
+        fixture_text("archive_holding_page2.html"),
+    )
 
 
 @respx.mock
-def test_list_links_returns_period_and_absolute_url_for_every_year(client: KseiClient) -> None:
+def test_list_links_returns_period_and_absolute_url_for_every_page(client: KseiClient) -> None:
     mock_holding_pages()
 
     assert client.list_links(HOLDING) == [
-        Link(HOLDING.name, date(2025, 12, 30), f"{BASE}/Download/BalanceposEfek20251230.zip"),
-        Link(HOLDING.name, date(2026, 8, 31), f"{BASE}/Download/BalanceposEfek20260831.zip"),
-        Link(HOLDING.name, date(2026, 9, 30), f"{BASE}/Download/BalanceposEfek20260930.zip"),
+        Link(HOLDING.name, date(2025, 12, 30), f"{DOWNLOADS}/BalanceposEfek20251230.zip"),
+        Link(HOLDING.name, date(2026, 8, 31), f"{DOWNLOADS}/BalanceposEfek20260831.zip"),
+        Link(HOLDING.name, date(2026, 9, 30), f"{DOWNLOADS}/BalanceposEfek20260930.zip"),
     ]
+
+
+@respx.mock
+def test_list_links_requests_page_one_without_a_query_then_each_next_page(
+    client: KseiClient,
+) -> None:
+    route = mock_holding_pages()
+
+    client.list_links(HOLDING)
+
+    # the first empty page (3) ends the listing; nothing is requested after it
+    assert [str(call.request.url) for call in route.calls] == [
+        ARCHIVE,
+        f"{ARCHIVE}?page=2",
+        f"{ARCHIVE}?page=3",
+    ]
+
+
+@respx.mock
+def test_list_links_stops_when_a_page_only_repeats_links_already_seen(client: KseiClient) -> None:
+    page = fixture_text("archive_holding_page1.html")
+    route = mock_archive(ARCHIVE, page, page)
+
+    assert len(client.list_links(HOLDING)) == 2
+    assert route.call_count == 2
 
 
 @respx.mock
@@ -79,16 +118,16 @@ def test_list_links_ignores_unrelated_links_and_duplicates(client: KseiClient) -
     urls = [link.url for link in client.list_links(HOLDING)]
 
     assert len(urls) == len(set(urls)) == 3
-    assert all("Panduan" not in u and "master_securities" not in u for u in urls)
+    assert all("Panduan" not in u and "statik-efek" not in u for u in urls)
 
 
 @respx.mock
 def test_master_links_match_the_txt_zip_pattern(client: KseiClient) -> None:
     master = DATASETS["master_securities"]
-    respx.get(MASTER_ARCHIVE).respond(200, text=fixture_text("archive_master_2026.html"))
+    mock_archive(MASTER_ARCHIVE, fixture_text("archive_master_page1.html"))
 
     assert [link.url for link in client.list_links(master)] == [
-        f"{BASE}/Download/StatisEfek20260930.txt.zip"
+        f"{DOWNLOADS}/StatisEfek20260930.txt.zip"
     ]
 
 
@@ -231,20 +270,20 @@ def test_default_settings_survive_four_consecutive_500s(fake_time: FakeTime) -> 
 
 
 @respx.mock
-def test_client_uses_the_configured_base_url(fake_time: FakeTime) -> None:
+def test_client_reads_the_archive_from_the_configured_base_url(fake_time: FakeTime) -> None:
     master = DATASETS["master_securities"]
     client = KseiClient(
         "t", 0.0, base_url="http://fixture.local", clock=fake_time.clock, sleep=fake_time.sleep
     )
-    respx.get(f"http://fixture.local{master.archive_path}").respond(
-        200, text=fixture_text("archive_master_2026.html")
+    route = mock_archive(
+        f"http://fixture.local{master.archive_path}", fixture_text("archive_master_page1.html")
     )
 
     links = client.list_links(master)
 
-    assert [link.url for link in links] == [
-        "http://fixture.local/Download/StatisEfek20260930.txt.zip"
-    ]
+    assert route.called
+    # download links are taken from the page as written, never built from the base URL
+    assert [link.url for link in links] == [f"{DOWNLOADS}/StatisEfek20260930.txt.zip"]
 
 
 @respx.mock

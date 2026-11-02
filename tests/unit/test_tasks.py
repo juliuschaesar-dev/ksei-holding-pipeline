@@ -10,7 +10,7 @@ from ksei.tasks import download_to_bronze
 
 pytestmark = pytest.mark.unit
 
-URL = "https://web.ksei.co.id/Download/BalanceposEfek20260930.zip"
+URL = "https://www.ksei.co.id/storage/Download/BalanceposEfek20260930.zip"
 LINK = Link("holding_composition", date(2026, 9, 30), URL)
 EXPECTED_KEY = "bronze/holding_composition/raw/year=2026/month=09/BalanceposEfek20260930.zip"
 

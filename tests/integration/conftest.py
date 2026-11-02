@@ -8,6 +8,7 @@ import threading
 from collections.abc import Iterator
 from datetime import UTC, date, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -104,27 +105,33 @@ def _filename(dataset: Dataset, period: date) -> str:
 
 
 FILES = {
-    f"/Download/{_filename(ds, p)}": _zip_for(ds, p) for ds in DATASETS.values() for p in PERIODS
+    f"/storage/Download/{_filename(ds, p)}": _zip_for(ds, p)
+    for ds in DATASETS.values()
+    for p in PERIODS
 }
 
 
-def _archive_html(dataset: Dataset) -> bytes:
-    links = "".join(
-        f'<a class="btn" href="/Download/{_filename(dataset, p)}">download</a>' for p in PERIODS
-    )
-    return (
-        '<select id="ArchiveYearFilterYear"><option value="2001" selected>2001</option></select>'
-        f"{links}"
+def _archive_html(dataset: Dataset, base_url: str) -> bytes:
+    """Page 1 of an archive: like the real site, with absolute links to the downloads."""
+    return "".join(
+        f'<a class="btn" href="{base_url}/storage/Download/{_filename(dataset, p)}">Unduh</a>'
+        for p in PERIODS
     ).encode()
 
 
 class FixtureKsei(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
-        body = FILES.get(self.path)
+        url = urlsplit(self.path)
+        body = FILES.get(url.path)
         if body is None:
             for dataset in DATASETS.values():
-                if self.path == dataset.archive_path:
-                    body = _archive_html(dataset)
+                if url.path == dataset.archive_path:
+                    # the archive is paged (`?page=N`); the later pages are empty
+                    body = (
+                        b""
+                        if url.query
+                        else _archive_html(dataset, f"http://{self.headers['Host']}")
+                    )
         self.send_response(200 if body is not None else 404)
         self.end_headers()
         self.wfile.write(body or b"")

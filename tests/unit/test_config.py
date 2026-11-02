@@ -52,11 +52,14 @@ def test_registry_has_both_datasets() -> None:
     assert set(DATASETS) == {"master_securities", "holding_composition"}
 
 
-@pytest.mark.parametrize("name", ["master_securities", "holding_composition"])
-def test_registry_entries_are_complete(name: str) -> None:
+@pytest.mark.parametrize(
+    ("name", "page"),
+    [("master_securities", "statik-efek"), ("holding_composition", "kepemilikan-efek")],
+)
+def test_registry_entries_are_complete(name: str, page: str) -> None:
     ds = DATASETS[name]
     assert ds.name == name
-    assert ds.archive_path == f"/archive_download/{name}"
+    assert ds.archive_path == f"/id/publikasi/data-dan-statistik/{page}"
     assert ds.table == f"bronze.stg_{name}"
     assert ds.link_pattern.groups == 1
 

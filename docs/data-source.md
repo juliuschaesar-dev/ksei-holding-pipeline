@@ -17,42 +17,50 @@ between requests (`KSEI_MIN_DELAY_SECONDS`), one request at a time (Airflow pool
 
 ## Archive pages (server-rendered HTML, no login)
 
-| Dataset | Current year | Other years |
-|---|---|---|
-| `master_securities` | `https://web.ksei.co.id/archive_download/master_securities` | `.../master_securities/<year>` |
-| `holding_composition` | `https://web.ksei.co.id/archive_download/holding_composition` | `.../holding_composition/<year>` |
+Since 2026-11-02 the pipeline reads the new site `www.ksei.co.id` (a Nuxt app that renders the
+list on the server). The legacy site `web.ksei.co.id` (`/archive_download/<dataset>`, a year
+dropdown, relative `/Download/` links) is no longer used.
 
-- The year dropdown (`Year`, 2023 to 2026) is wired by `ksei.js` to navigate
-  to `<archive URL>/<year>`. The query form `?Year=2023` is **wrong**: it
-  returns HTTP 500 on master_securities and is silently ignored on
-  holding_composition (which then shows the current year). Verified 2026-10-07:
-  `/<year>` returns HTTP 200 for 2023, 2024, 2025 on both datasets.
-- Each entry is `<h2>` "Master File Efek 30 September 2026" (the Indonesian
-  locale may translate the title) plus
-  `<a class="btn btn--primary" href="/Download/<file>.zip">`. Hrefs are
-  **relative** to `https://web.ksei.co.id`. Take the release date from the
-  file name (`\d{8}`), not the title.
-- Coverage: 2023 has only Oct, Nov, Dec (3 files); 2024 and 2025 have 12 each;
-  2026 has 9 (Jan to Sep, so far). That is 36 months per dataset.
+| Dataset | Archive page (`KSEI_BASE_URL` + path) |
+|---|---|
+| `master_securities` | `https://www.ksei.co.id/id/publikasi/data-dan-statistik/statik-efek` |
+| `holding_composition` | `https://www.ksei.co.id/id/publikasi/data-dan-statistik/kepemilikan-efek` |
+
+- The list is **paged, 8 entries per page, newest first**. Page 1 has no query; later pages are
+  `?page=2`, `?page=3`, ... (verified 2026-11-02 on both datasets: 5 pages, 36 entries; the last
+  page holds 4). The page numbers are `<button>` elements, not links, and the page count is only a
+  literal inside the minified Nuxt payload, so the client does not read it. It asks for the next
+  page until one adds no new download link. An out-of-range page (`?page=6`) answers HTTP 200 with
+  no entries, so the loop ends cleanly.
+- The same list is also loaded client-side from a JSON API on `webcms.ksei.co.id`. The pipeline
+  does **not** use it: only the public pages above are read.
+- Each entry is a `<p class="data-item-title">` ("Kepemilikan Efek 30 Oktober 2026", "Master
+  File Efek 30 Oktober 2026") plus an `<a href="https://www.ksei.co.id/storage/Download/<file>.zip">`
+  (the "Unduh" button). Hrefs are **absolute**. Take the release date from the file name
+  (`\d{8}`), not the title. The file names are the same as on the legacy site.
+- Coverage: 36 months per dataset, 2023-11-30 to 2026-10-30. The legacy site also offered
+  2023-10-31; the new site does not list it.
 - Release dates are the last trading day, so they vary (for example
-  2026-01-30, 2026-02-27, 2025-12-30); only the page list is authoritative.
-- Other links on the pages (OJK, BEI, the investor-type PDF, user guide) are
-  not data and must be ignored by the link filter. Match only
-  `/Download/(StatisEfek|BalanceposEfek)\d{8}(\.txt)?\.zip`.
+  2026-05-29, 2026-10-30, 2025-12-30); only the page list is authoritative.
+- Other links on the pages (menu, footer, social media, guides) are not data and must be ignored
+  by the link filter. Match only `/Download/(StatisEfek|BalanceposEfek)\d{8}(\.txt)?\.zip`.
 
 ## Observed server behaviour
 
-The year pages (`/archive_download/<dataset>/<year>`) intermittently return
-HTTP 500, sometimes several times in a row, and succeed on a later attempt
-(seen 2026-10-07 on both datasets, different years). The client therefore
-defaults to 5 attempts with exponential backoff starting at 5 s, never faster
-than the minimum request spacing.
+The legacy year pages intermittently returned HTTP 500, sometimes several times in a row, and
+succeeded on a later attempt (seen 2026-10-07). The new pages answered every request with HTTP 200
+on 2026-11-02, but the client keeps its defaults: 5 attempts with exponential backoff starting at
+5 s, never faster than the minimum request spacing.
 
 ## Request budget used during discovery
 
-About 20 requests total on 2026-10-07 (robots checks, 2 current pages,
-6 year pages, 1 JS asset, 2 sample zips plus the 2 earlier zips supplied by the
-project owner), each at least 5 seconds apart, with a descriptive User-Agent.
+2026-10-07 (legacy site): about 20 requests (robots checks, 2 current pages, 6 year pages, 1 JS
+asset, 2 sample zips plus the 2 earlier zips supplied by the project owner).
+
+2026-11-02 (new site): 7 requests (the 2 archive pages, 1 JS asset, `?page=2` and `?page=6` on
+`kepemilikan-efek`, `?page=2` and `?page=5` on `statik-efek`).
+
+All of them at least 5 seconds apart, with a descriptive User-Agent, through `KseiClient`.
 
 ## Datasets and files
 
