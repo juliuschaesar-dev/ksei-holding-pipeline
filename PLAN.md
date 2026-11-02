@@ -371,7 +371,7 @@ manual clicks.
       `make dbt-test` (the same tests as Phases 2 and 4, not new ones); the logs of a failed run are kept.
 - [x] Cache uv (setup-uv) and Docker layers (buildx and bake with the GitHub cache); the effect
       shows only on the second run.
-- [ ] Branch protection: CI must pass before merge. A GitHub setting, not a file; the steps are in
+- [x] Branch protection: CI must pass before merge. A GitHub setting, not a file; the steps are in
       `docs/runbook.md`.
 
 **Exit criteria:** CI green on `main`; badge in README. The badge is in the README; the first green run on
@@ -401,7 +401,7 @@ manual clicks.
 
 | Risk | Mitigation |
 |---|---|
-| Legacy site `web.ksei.co.id` retired in favor of `www.ksei.co.id` | Base URLs in config; scraping logic isolated per dataset; alert on 404 |
+| Legacy site `web.ksei.co.id` retired in favor of `www.ksei.co.id` | Resolved 2026-11-02: the pipeline reads the paged archive pages on `www.ksei.co.id` (`docs/data-source.md`). Base URL in config; scraping logic isolated per dataset; alert on 404 |
 | KSEI page structure or URL changes | Isolate scraping logic in `client.py`; alert on parse failure; schema check task |
 | File format changes between periods | Parser versioning per period range; schema validation in `parse_to_parquet` |
 | Terms of use prohibit automation | Phase 0 check; fall back to manual download + same pipeline from bronze |

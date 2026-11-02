@@ -27,24 +27,16 @@ class Link:
 
 
 class _ArchivePage(HTMLParser):
-    """Collects every <a href> and the year <option> values of an archive page."""
+    """Collects every <a href> of an archive page."""
 
     def __init__(self) -> None:
         super().__init__()
         self.hrefs: list[str] = []
-        self.years: list[str] = []
-        self.selected_year: str | None = None
-        self._option: dict[str, str | None] | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        values = dict(attrs)
-        if tag == "a" and values.get("href"):
-            self.hrefs.append(values["href"] or "")
-        elif tag == "option" and values.get("value"):
-            year = values["value"] or ""
-            self.years.append(year)
-            if "selected" in values:
-                self.selected_year = year
+        href = dict(attrs).get("href")
+        if tag == "a" and href:
+            self.hrefs.append(href)
 
 
 class KseiClient:
@@ -116,20 +108,21 @@ class KseiClient:
         return links
 
     def list_links(self, dataset: Dataset) -> list[Link]:
-        """All download links of a dataset across every year offered by the archive."""
-        parse = _ArchivePage()
+        """All download links of a dataset. The archive is paged (`?page=N`) and answers an
+        out-of-range page with an empty list, so pages are read until one adds no new link."""
         archive_url = self._base_url + dataset.archive_path
-        parse.feed(self._get(archive_url).text)
-        found = self._page_links(dataset, parse, archive_url)
-        current = parse.selected_year or (parse.years[0] if parse.years else None)
-        for year in parse.years:
-            if year == current:
-                continue
+        found: dict[str, Link] = {}
+        page_number = 1
+        while True:
+            url = archive_url if page_number == 1 else f"{archive_url}?page={page_number}"
             page = _ArchivePage()
-            year_url = f"{archive_url}/{year}"
-            page.feed(self._get(year_url).text)
-            found += self._page_links(dataset, page, year_url)
-        unique = {link.url: link for link in found}
-        if not unique:
+            page.feed(self._get(url).text)
+            links = self._page_links(dataset, page, url)
+            new = {link.url: link for link in links if link.url not in found}
+            if not new:
+                break
+            found |= new
+            page_number += 1
+        if not found:
             raise DownloadError(f"no download links found for {dataset.name}")
-        return sorted(unique.values(), key=lambda link: link.period)
+        return sorted(found.values(), key=lambda link: link.period)

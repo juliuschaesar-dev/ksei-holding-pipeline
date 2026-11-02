@@ -176,19 +176,19 @@ _MASTER_SCHEMA = _schema(
     ]
 )
 
-_ARCHIVE = "/archive_download"
+_ARCHIVE = "/id/publikasi/data-dan-statistik"
 
 DATASETS: dict[str, Dataset] = {
     "master_securities": Dataset(
         name="master_securities",
-        archive_path=f"{_ARCHIVE}/master_securities",
+        archive_path=f"{_ARCHIVE}/statik-efek",
         link_pattern=re.compile(r"/Download/StatisEfek(\d{8})\.txt\.zip$"),
         table="bronze.stg_master_securities",
         schema=_MASTER_SCHEMA,
     ),
     "holding_composition": Dataset(
         name="holding_composition",
-        archive_path=f"{_ARCHIVE}/holding_composition",
+        archive_path=f"{_ARCHIVE}/kepemilikan-efek",
         link_pattern=re.compile(r"/Download/BalanceposEfek(\d{8})\.zip$"),
         table="bronze.stg_holding_composition",
         schema=_HOLDING_SCHEMA,
